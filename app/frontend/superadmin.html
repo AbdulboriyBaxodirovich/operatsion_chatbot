@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BRB Super Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes softGlow {
+            0%, 100% { transform: translate(0px, 0px) scale(1); opacity: 0.3; }
+            50% { transform: translate(60px, -40px) scale(1.15); opacity: 0.5; }
+        }
+        .animate-bg-glow {
+            animation: softGlow 10s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 h-screen w-full m-0 p-0 overflow-hidden font-sans relative">
+
+    <!-- DINAMIK MAYIN QIZIL FON AKCENTLARI -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none z-0 select-none">
+        <div class="absolute -top-40 -left-40 w-96 h-96 bg-red-200 rounded-full mix-blend-multiply filter blur-[80px] animate-bg-glow"></div>
+        <div class="absolute bottom-10 right-10 w-[500px] h-[500px] bg-red-100 rounded-full mix-blend-multiply filter blur-[120px] animate-bg-glow" style="animation-delay: 3s;"></div>
+    </div>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="flex h-screen w-full items-center justify-center relative z-10">
+        <div class="bg-white/90 backdrop-blur-md p-8 rounded-2xl shadow-xl w-full max-w-sm border border-red-100/50">
+            <div class="text-center mb-6">
+                <!-- BRB Bank logotip uslubi -->
+                <div class="w-12 h-12 rounded-xl bg-red-600 flex items-center justify-center text-white mx-auto mb-3 shadow-md shadow-red-600/20">
+                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2M9 17H7v-7h2zm4 0h-2V7h2zm4 0h-2v-4h2z"/></svg>
+                </div>
+                <h1 class="text-xl font-bold text-gray-800">👑 BRB Super Admin</h1>
+                <p class="text-gray-500 text-xs mt-1">Boshqaruv va nazorat tizimi</p>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 font-bold mb-1.5 text-xs">Login</label>
+                <input type="text" id="login-username" class="w-full p-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-red-500 bg-gray-50/50 transition text-sm" placeholder="admin">
+            </div>
+            <div class="mb-6">
+                <label class="block text-gray-700 font-bold mb-1.5 text-xs">Parol</label>
+                <input type="password" id="login-password" class="w-full p-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-red-500 bg-gray-50/50 transition text-sm" placeholder="••••••••">
+            </div>
+            
+            <button onclick="loginSuperAdmin()" class="w-full bg-red-600 text-white font-bold py-2.5 px-4 rounded-xl hover:bg-red-700 transition shadow-md shadow-red-600/20 text-sm">
+                Tizimga kirish
+            </button>
+            <div id="login-alert" class="mt-4 text-center text-red-600 font-bold text-xs hidden"></div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD SCREEN -->
+    <div id="dashboard-screen" class="hidden h-screen flex flex-col md:flex-row w-full overflow-hidden relative z-10">
+        
+        <!-- SIDEBAR (OQ VA KULRANG STRUKTURA - BRB USLUBI) -->
+        <aside class="w-full md:w-72 bg-white text-gray-700 flex flex-col border-r border-gray-200/80 flex-shrink-0 shadow-sm h-full">
+            <!-- Logotip va Sarlavha (Tepada qoladi) -->
+            <div class="p-5 border-b border-gray-100 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <!-- Logotip konteyneri: Oq fon (bg-white) va nozik chegara (border) berildi -->
+                    <div class="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center bg-white border border-gray-200/80 flex-shrink-0 shadow-sm p-1">
+                        <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Diagonal qizil lenta -->
+                            <path d="M85 20 L62 20 C48 50 35 68 15 80 L38 80 C58 68 68 50 85 20 Z" fill="#DC2626"/>
+                
+                            <!-- Sleek kontur chizig'i -->
+                            <path d="M85 20 C68 50 58 68 38 80" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+                
+                            <!-- BRB Matni: Oq fonda ko'rinishi uchun to'q rangga (#1E293B) o'zgartirildi -->
+                            <text x="50" y="82" fill="#1E293B" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="24" letter-spacing="0.5">BRB</text>
+                        </svg>
+                    </div>
+        
+                    <!-- Sarlavha qismi -->
+                    <div>
+                        <h1 class="font-bold text-gray-900 tracking-tight leading-none uppercase">brb.uz</h1>
+                        <span class="text-[10px] text-gray-400 font-medium tracking-wider uppercase">Boshqaruv paneli</span>
+                    </div>
+                </div>
+                <!-- Versiya belgisi -->
+                <span class="px-2 py-0.5 rounded-md bg-red-50 text-red-600 text-[10px] font-bold border border-red-200">v2.0</span>
+            </div>
+
+            <!-- Navigatsiya menyusi (flex-1 pastki blokni eng tagiga itaradi) -->
+            <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+                <button id="btn-chats" onclick="switchTab('chats')" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition text-left text-gray-600 hover:bg-gray-50 hover:text-red-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                    Suhbatlar & Sessiyalar
+                </button>
+                <button id="btn-qdrant" onclick="switchTab('qdrant')" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition text-left text-gray-600 hover:bg-gray-50 hover:text-red-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v6a2 2 0 012-2m14-10V7a2 2 0 00-2-2H5a2 2 0 00-2 2v4m14 0h-2m-3 0h-2M9 11H7m0 0v-4m0 0h8m-8 0a2 2 0 012-2h4a2 2 0 012 2v4" /></svg>
+                    Qdrant Bilimlar Bazasi
+                </button>
+                <button id="btn-admins" onclick="switchTab('admins')" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition text-left text-gray-600 hover:bg-gray-50 hover:text-red-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    Adminlarni Boshqarish
+                </button>
+                <button id="btn-logs" onclick="switchTab('logs')" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition text-left text-gray-600 hover:bg-gray-50 hover:text-red-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Audit & Tizim Jurnallari
+                </button>
+                <button id="btn-settings" onclick="switchTab('settings')" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition text-left text-gray-600 hover:bg-gray-50 hover:text-red-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    Xavfsizlik Sozlamalari
+                </button>
+            </nav>
+
+            <!-- FAYDLANUVCHI MA'LUMOTI (Eng pastki qismga ko'chirildi) -->
+            <div class="p-4 border-t border-gray-100 bg-gray-50/50 relative">
+        
+                <!-- Yuqoriga ochiluvchi menyu (Dropup) -->
+                <div id="panel-dropdown" class="hidden absolute bottom-full left-3 right-3 mb-2 bg-white rounded-xl shadow-xl border border-gray-100 p-1.5 z-50">
+                    <!-- Admin Panel (Suhbatlar) -->
+                    <button onclick="secureNavigate('http://localhost:8080/')" class="w-full text-left p-2.5 rounded-lg text-gray-700 hover:bg-gray-50 transition block">
+                        <div class="text-xs font-bold text-gray-900">Suhbat paneli</div>
+                    </button>
+            
+                    <!-- Super Admin Panel -->
+                    <button onclick="secureNavigate('http://localhost:8080/admin-panel')" class="w-full text-left p-2.5 rounded-lg text-gray-700 hover:bg-gray-50 transition block mt-1">
+                        <div class="text-xs font-bold text-red-600">Admin Paneli</div>
+                    </button>
+                </div>
+
+                <!-- Profil Asosiy qismi -->
+                <div class="flex items-center gap-3 cursor-pointer select-none" onclick="togglePanelMenu()">
+                    <div class="w-8 h-8 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center text-red-600 text-xs font-bold shadow-sm flex-shrink-0">
+                        SA
+                    </div>
+                    <div class="truncate flex-1">
+                        <div id="current-username" class="text-xs font-bold text-gray-800 truncate">SuperAdmin</div>
+                        <div class="text-[10px] text-emerald-600 flex items-center gap-1 font-medium">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> tizimda faol
+                        </div>
+                    </div>
+                    <!-- To'g'ridan-to'g'ri chiqish tugmasi -->
+                    <button onclick="event.stopPropagation(); logoutSuperAdmin()" title="Tizimdan chiqish" class="text-gray-400 hover:text-red-600 p-1.5 rounded-xl hover:bg-red-50 transition flex-shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                    </button>
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 flex flex-col overflow-hidden min-w-0 bg-transparent">
+            <div class="p-6 md:p-8 flex-1 overflow-y-auto">
+
+                <!-- TAB: CHATS -->
+                <div id="tab-chats" class="hidden space-y-6">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900">Mijozlar bilan suhbatlar jurnali</h2>
+                            <p class="text-xs text-gray-500">Telegram bot va Web platformadagi faol sessiyalar monitoringi</p>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="bg-red-50/60 border border-red-100 px-5 py-2.5 rounded-xl min-w-[130px]">
+                                <div class="text-[10px] font-bold text-red-600 uppercase">Sessiyalar</div>
+                                <div id="stat-total-sessions" class="text-xl font-bold text-gray-900 mt-0.5">0</div>
+                            </div>
+                            <div class="bg-emerald-50/60 border border-emerald-100 px-5 py-2.5 rounded-xl min-w-[130px]">
+                                <div class="text-[10px] font-bold text-emerald-600 uppercase">Xabarlar</div>
+                                <div id="stat-total-messages" class="text-xl font-bold text-gray-900 mt-0.5">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white/80 backdrop-blur-md p-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-3 items-center">
+                        <div class="flex-1 min-w-[240px]">
+                            <input type="text" id="search-id" oninput="filterTableData()" placeholder="Sessiya ID orqali qidirish..." 
+                                class="w-full px-4 py-2 text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-red-500 bg-white transition">
+                        </div>
+                        <div class="w-full sm:w-auto">
+                            <input type="month" id="filter-date" onchange="filterTableData()" 
+                                class="w-full px-4 py-2 text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-red-500 bg-white transition text-gray-600">
+                        </div>
+                        <button onclick="clearFilters()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-xs font-semibold transition">
+                            Filtrni tozalash
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div class="xl:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div class="overflow-auto max-h-[520px] w-full">
+                                <table class="w-full text-left border-collapse min-w-[750px]">
+                                    <thead>
+                                        <tr class="bg-gray-50 border-b border-gray-100 text-gray-500 font-bold text-[11px] uppercase tracking-wider">
+                                            <th class="p-4 whitespace-nowrap">Sessiya ID</th>
+                                            <th class="p-4 whitespace-nowrap">Platforma</th>
+                                            <th class="p-4 whitespace-nowrap">Boshlanishi</th>
+                                            <th class="p-4 whitespace-nowrap">Oxirgi xabar</th>
+                                            <th class="p-4 text-center whitespace-nowrap">Xabarlar</th>
+                                            <th class="p-4 text-center whitespace-nowrap">Holat</th>
+                                            <th class="p-4 text-center whitespace-nowrap">Amallar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="session-table-body" class="text-xs divide-y divide-gray-100">
+                                        <!-- Dinamik ma'lumotlar -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[520px]">
+                            <div class="p-4 border-b border-gray-100 bg-gray-50/50 rounded-t-2xl">
+                                <h3 id="current-session" class="font-bold text-gray-900 truncate text-xs">Sessiyani tanlang</h3>
+                                <p class="text-[10px] text-gray-400 mt-0.5">Jonli xabarlar oqimi jurnali</p>
+                            </div>
+                            <div id="chat-history" class="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-50 flex flex-col">
+                                <div class="text-gray-400 text-center my-auto px-4 text-xs italic">
+                                    Suhbat tarixini to'liq ko'rish uchun chap tomondagi jadvaldan kerakli Sessiya ID ustiga bosing.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: QDRANT -->
+                <div id="tab-qdrant" class="hidden space-y-6">
+                    <div class="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <h2 class="text-lg font-bold text-gray-900">Qdrant intellektual bilimlar bazasi</h2>
+                        <p class="text-xs text-gray-500 mt-1">RAG tizimi uchun veb-saytlardan ma'lumot scrap qilish yoki hujjat yuklash paneli</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="space-y-6 lg:col-span-1">
+                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+                                <h3 class="font-bold text-gray-900 text-xs border-b border-gray-100 pb-2">Veb-saytdan matn yuklash</h3>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-600 mb-1">Manba URL manzili</label>
+                                    <div class="flex gap-2">
+                                        <input type="url" id="scrape-url" placeholder="https://brb.uz/info" 
+                                            class="flex-1 px-3 py-2 text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-red-500 transition">
+                                        <button id="btn-scrape" onclick="fetchFromUrl()" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold text-xs rounded-xl transition whitespace-nowrap shadow-sm">
+                                            Matnni olish
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-600 mb-1">Hujjat sarlavhasi</label>
+                                    <input type="text" id="qdrant-title" placeholder="Kredit shartlari haqida nizom" 
+                                        class="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-red-500 transition">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-600 mb-1">Yuklangan matn mazmuni</label>
+                                    <textarea id="qdrant-text" rows="5" placeholder="Saytdan olingan yoki o'zingiz kiritadigan asosiy kontent..." 
+                                        class="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-red-500 transition resize-none"></textarea>
+                                </div>
+                                <button onclick="addToQdrant()" class="w-full py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition shadow-md shadow-red-600/10">
+                                    Vektor bazaga (Qdrant) saqlash
+                                </button>
+                            </div>
+
+                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+                                <h3 class="font-bold text-gray-900 text-xs border-b border-gray-100 pb-2">Fayllar yuklash (PDF / Word)</h3>
+    
+                                <!-- Xabarlar uchun alert -->
+                                <div id="upload-alert" class="hidden"></div>
+
+                                <!-- Drag and Drop hududi va fayl tanlash -->
+                                <label id="drop-zone" 
+                                    ondrop="handleFileDrop(event)" 
+                                    ondragover="event.preventDefault(); this.classList.add('bg-red-50', 'border-red-400')" 
+                                    ondragleave="this.classList.remove('bg-red-50', 'border-red-400')" 
+                                    class="border-2 border-dashed border-gray-200 hover:border-red-400 rounded-xl p-4 text-center transition bg-gray-50 block cursor-pointer">
+        
+                                    <!-- ONCHANGE qo'shildi -->
+                                    <input type="file" id="file-upload" onchange="handleFileSelect(event)" multiple class="hidden" accept=".pdf,.doc,.docx">
+        
+                                    <svg class="w-7 h-7 mx-auto text-gray-400 mb-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                                    <p class="text-[11px] font-semibold text-gray-600 pointer-events-none">Fayllarni tanlash uchun bosing yoki shu yerga tashlang</p>
+                                </label>
+
+                                <!-- Tanlangan fayllar ro'yxati ko'rinadigan joy qo'shildi -->
+                                <div id="file-preview-list" class="space-y-2 flex flex-col max-h-40 overflow-y-auto"></div>
+
+                                <!-- ID nomi to'g'rilandi va default holatda o'chirib qo'yildi -->
+                                <button id="btn-upload-file" disabled onclick="uploadFiles()" class="w-full py-2.5 px-4 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl transition shadow-md shadow-red-600/10">
+                                    Tanlangan fayllarni indekslash
+                                </button>
+                            </div>
+
+                            <button onclick="clearAllQdrant()" class="w-full py-2 px-4 bg-red-50 hover:bg-red-600 hover:text-white border border-red-200 text-red-700 font-bold text-xs rounded-xl transition text-center group mt-4">
+                                <span class="group-hover:text-white">🧹 Bazani to'liq o'chirish</span>
+                            </button>
+                        </div>
+
+                        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                            <div class="p-4 bg-gray-50/50 border-b border-gray-100">
+                                <h3 class="font-bold text-gray-900 text-xs">Indekslangan hujjatlar segmenti</h3>
+                            </div>
+                            <div class="overflow-auto max-h-[550px] w-full">
+                                <table class="w-full text-left border-collapse min-w-[850px]">
+                                    <thead>
+                                        <tr class="bg-gray-50 border-b border-gray-100 text-gray-500 font-bold text-[11px] uppercase tracking-wider">
+                                            <th class="p-3 whitespace-nowrap">Manba / URL</th>
+                                            <th class="p-3 whitespace-nowrap">Sarlavha</th>
+                                            <th class="p-3 whitespace-nowrap">Matn parchasi</th>
+                                            <th class="p-3 text-center whitespace-nowrap">Holat & Admin</th>
+                                            <th class="p-3 text-center whitespace-nowrap">Amal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="qdrant-table-body" class="text-[11px] divide-y divide-gray-100">
+                                        <!-- Dinamik ma'lumotlar -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: ADMINS -->
+                <div id="tab-admins" class="hidden space-y-6">
+                    <div class="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <h2 class="text-lg font-bold text-gray-900">Tizim administratorlari</h2>
+                        <p class="text-xs text-gray-500 mt-1">Platformaga kirish huquqiga ega bo'lgan sub-adminlarni boshqarish</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4 h-fit">
+                            <h3 class="font-bold text-gray-900 text-xs border-b border-gray-100 pb-2">Yangi administrator qo'shish</h3>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-600 mb-1">Login (Username)</label>
+                                <input type="text" id="new-admin-user" placeholder="operator_brb" 
+                                    class="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-red-500 transition">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-600 mb-1">Maxfiy parol</label>
+                                <input type="password" id="new-admin-pass" placeholder="••••••••" 
+                                    class="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-red-500 transition">
+                            </div>
+                            <button onclick="addAdmin()" class="w-full py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition shadow-md shadow-red-600/10">
+                                Adminni ro'yxatdan o'tkazish
+                            </button>
+                        </div>
+
+                        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div class="overflow-auto max-h-[500px] w-full">
+                                <table class="w-full text-left border-collapse min-w-[600px]">
+                                    <thead>
+                                        <tr class="bg-gray-50 border-b border-gray-100 text-gray-500 font-bold text-[11px] uppercase tracking-wider">
+                                            <th class="p-4 whitespace-nowrap">ID</th>
+                                            <th class="p-4 whitespace-nowrap">Foydalanuvchi nomi</th>
+                                            <th class="p-4 whitespace-nowrap">Yaratilgan sana</th>
+                                            <th class="p-4 text-right whitespace-nowrap">Amallar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admins-table-body" class="text-xs divide-y divide-gray-100">
+                                        <!-- Dinamik ma'lumotlar -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: LOGS -->
+                <div id="tab-logs" class="hidden space-y-6">
+                    <div class="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <h2 class="text-lg font-bold text-gray-900">Audit logs & Xavfsizlik jurnali</h2>
+                        <p class="text-xs text-gray-500 mt-1">Bilimlar bazasidagi har qanday operatsiyalar xronologiyasi</p>
+                    </div>
+
+                    <button onclick="clearAllLogs()" 
+                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition shadow-md">
+                        Aniqroq 🧹 Barcha loglarni tozalash
+                    </button>
+
+                    <div class="bg-white/80 backdrop-blur-md p-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-3 items-center mb-6">
+                        <div class="flex-1 min-w-[220px]">
+                            <input type="text" id="log-search-title" placeholder="Hujjat sarlavhasi bo'yicha qidirish..." 
+                                class="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:border-red-500" 
+                                oninput="filterLogs()">
+                        </div>
+
+                        <div class="flex-1 min-w-[180px]">
+                            <select id="log-filter-admin" onchange="filterLogs()" 
+                                    class="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:border-red-500 bg-white">
+                                <option value="">Barcha adminlar</option>
+                            </select>
+                        </div>
+
+                        <div class="flex-1 min-w-[160px]">
+                            <select id="log-filter-action" onchange="filterLogs()" 
+                                    class="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:border-red-500 bg-white">
+                                <option value="">Barcha amallar</option>
+                                <option value="Yangi">Yangi</option>
+                                <option value="O'zgargan">O'zgargan</option>
+                                <option value="o'chirildi">O'chirildi</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <button onclick="clearLogFilters()" 
+                                    class="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold transition">
+                                Filtrlarni tozalash
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="overflow-auto max-h-[600px] w-full">
+                            <table class="w-full text-left border-collapse min-w-[950px]">
+                                <thead>
+                                    <tr class="bg-gray-50 border-b border-gray-100 text-gray-500 font-bold text-[11px] uppercase tracking-wider">
+                                        <th class="p-4 whitespace-nowrap">ID</th>
+                                        <th class="p-4 whitespace-nowrap">Manba URL / Fayl</th>
+                                        <th class="p-4 whitespace-nowrap">Hujjat sarlavhasi</th>
+                                        <th class="p-4 whitespace-nowrap">Mas'ul administrator</th>
+                                        <th class="p-4 whitespace-nowrap">Amal turi</th>
+                                        <th class="p-4 whitespace-nowrap">Sana va vaqt</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="logs-table-body" class="text-xs divide-y divide-gray-100">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: SETTINGS -->
+                <div id="tab-settings" class="hidden space-y-6">
+                    <div class="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <h2 class="text-lg font-bold text-gray-900">Profil va Xavfsizlik sozlamalari</h2>
+                        <p class="text-xs text-gray-500 mt-1">Bosh boshqaruvchi profil ma'lumotlarini yangilash</p>
+                    </div>
+
+                    <div class="max-w-xl bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-5">
+                        <div id="settings-alert" class="hidden p-3 rounded-xl font-medium text-xs"></div>
+
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-600 mb-1">Joriy login nomi</label>
+                            <input type="text" id="settings-username" value="SuperAdmin"
+                                class="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-red-500 transition font-semibold text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-600 mb-1">Yangi kuchli parol</label>
+                            <input type="password" id="settings-password" placeholder="••••••••" 
+                                class="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-red-500 transition text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-600 mb-1">Yangi parolni takrorlang</label>
+                            <input type="password" id="settings-password-confirm" placeholder="••••••••" 
+                                class="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-red-500 transition text-xs">
+                        </div>
+                        <button onclick="updateSettings()" class="w-full py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition shadow-lg shadow-red-600/10">
+                            O'zgarishlarni xavfsiz saqlash
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL WINDOW -->
+    <div id="text-modal" class="hidden fixed inset-0 items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-2xl w-full max-h-[80vh] flex flex-col transform transition-all duration-200">
+            <div class="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50 rounded-t-2xl">
+                <h3 class="font-bold text-gray-900 text-xs">Hujjatning to'liq matnli ko'rinishi</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-200 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1">
+                <p id="modal-content" class="text-gray-700 text-xs leading-relaxed whitespace-pre-wrap"></p>
+            </div>
+            <div class="p-4 border-t border-gray-100 bg-gray-50 flex justify-end rounded-b-2xl">
+                <button onclick="closeModal()" class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition">
+                    Yopish
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // Global massiv kesh ma'lumoti uchun
+        let allSessionsCached = [];
+
+        // =======================================
+        // AVTORIZATSIYA (LOGIN) LOGIKASI
+        // =======================================
+        async function checkAuth() {
+            try {
+                const res = await fetch('/superadmin/me');
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('current-username').innerText = data.username;
+                    document.getElementById('settings-username').value = data.username;
+                    showDashboard();
+                } else {
+                    showLogin();
+                }
+            } catch (e) {
+                showLogin();
+            }
+        }
+
+        let inactivityTimer;
+        const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 daqiqa (millisoniyada)
+
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+    
+            // Faqat dashboard (asosiy oyna) ochiq bo'lsagina taymer ishlaydi
+            if (!document.getElementById('dashboard-screen').classList.contains('hidden')) {
+                inactivityTimer = setTimeout(() => {
+                    alert("⚠️ 15 daqiqa davomida harakatsizlik sababli xavfsizlik yuzasidan tizimdan avtomatik chiqildi.");
+            
+                    // Qaysi panelda ekanligiga qarab to'g'ri chiqish funksiyasini chaqiradi
+                    if (typeof logoutSuperAdmin === "function") {
+                        logoutSuperAdmin();
+                    } else if (typeof logoutAdmin === "function") {
+                        logoutAdmin();
+                    }
+                }, INACTIVITY_LIMIT);
+            }
+        }
+
+        // Sahifadagi barcha harakatlarni kuzatish va taymerni nollash
+        window.onload = resetInactivityTimer;
+        document.onmousemove = resetInactivityTimer;
+        document.onkeypress = resetInactivityTimer;
+        document.onclick = resetInactivityTimer;
+        document.onscroll = resetInactivityTimer;
+
+        async function loginSuperAdmin() {
+            const user = document.getElementById('login-username').value;
+            const pass = document.getElementById('login-password').value;
+            const alertBox = document.getElementById('login-alert');
+
+            if (!user || !pass) {
+                alertBox.innerText = "Barcha maydonlarni to'ldiring!";
+                alertBox.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const res = await fetch('/superadmin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('current-username').innerText = data.username;
+                    document.getElementById('settings-username').value = data.username;
+                    alertBox.classList.add('hidden');
+                    showDashboard();
+                } else {
+                    const err = await res.json();
+                    alertBox.innerText = err.detail || "Xatolik yuz berdi!";
+                    alertBox.classList.remove('hidden');
+                }
+            } catch (e) {
+                alertBox.innerText = "Server bilan aloqa yo'q!";
+                alertBox.classList.remove('hidden');
+            }
+        }
+
+        async function logoutSuperAdmin() {
+            await fetch('/superadmin/logout', { method: 'POST' });
+            showLogin();
+        }
+
+        // =======================================
+        // SOZLAMALARNI YANGILASH
+        // =======================================
+        async function updateSettings() {
+            const newUser = document.getElementById('settings-username').value;
+            const newPass = document.getElementById('settings-password').value;
+            const confirmPass = document.getElementById('settings-password-confirm').value; 
+            const alertBox = document.getElementById('settings-alert');
+
+            if (!newUser || !newPass || !confirmPass) {
+                alertBox.textContent = "Barcha maydonlarni to'ldiring!";
+                alertBox.className = "p-3 rounded-xl font-medium text-sm bg-red-50 border border-red-200 text-red-700 block";
+                return;
+            }
+
+            if (newPass !== confirmPass) {
+                alertBox.textContent = "Kiritilgan parollar bir-biriga mos kelmadi!";
+                alertBox.className = "p-3 rounded-xl font-medium text-sm bg-red-50 border border-red-200 text-red-700 block";
+                return;
+            }
+
+            try {
+                const res = await fetch('/superadmin/settings/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ new_username: newUser, new_password: newPass })
+                });
+
+                if (res.ok) {
+                    alertBox.textContent = "Muvaffaqiyatli saqlandi!";
+                    alertBox.className = "p-3 rounded-xl font-medium text-sm bg-emerald-50 border border-emerald-200 text-emerald-700 block";
+                    document.getElementById('current-username').innerText = newUser;
+                    document.getElementById('settings-password').value = '';
+                    document.getElementById('settings-password-confirm').value = ''; 
+                } else {
+                    alertBox.textContent = "Xatolik yuz berdi!";
+                    alertBox.className = "p-3 rounded-xl font-medium text-sm bg-red-50 border border-red-200 text-red-700 block";
+                }
+            } catch (e) {
+                alertBox.textContent = "Server xatosi!";
+                alertBox.className = "p-3 rounded-xl font-medium text-sm bg-red-50 border border-red-200 text-red-700 block";
+            }
+        }
+
+        // Pastdan yuqoriga menyuni ochish/yopish
+        function togglePanelMenu() {
+            const dropdown = document.getElementById('panel-dropdown');
+            if (dropdown.classList.contains('hidden')) {
+                dropdown.classList.remove('hidden');
+            } else {
+                dropdown.classList.add('hidden');
+            }
+        }
+
+        // XAVFSIZLIK: Boshqa panelga o'tishda superadminni qulflash
+        function secureNavigate(targetUrl) {
+            // 1. Joriy oynani darhol vizual qulflash (Login oynasini ko'rsatish)
+            const dashboardScreen = document.getElementById('dashboard-screen');
+            const loginScreen = document.getElementById('login-screen');
+            if (dashboardScreen && loginScreen) {
+                dashboardScreen.classList.add('hidden');
+                loginScreen.classList.remove('hidden');
+            }
+
+            // 2. Seans o'chirish funksiyasini majburiy ishga tushirish
+            if (typeof logoutSuperAdmin === 'function') {
+                logoutSuperAdmin();
+            }
+
+            // Brauzer kesh xotiralarini tozalash (Token va sessionlar o'chishi uchun)
+            localStorage.clear();
+            sessionStorage.clear();
+
+            // 3. Yangi manzilga yo'naltirish (Xavfsizlik amallari yakunlangach)
+            setTimeout(() => {
+                window.location.href = targetUrl;
+            }, 100);
+        }
+
+        function showLogin() {
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('login-screen').classList.add('flex');
+            document.getElementById('dashboard-screen').classList.add('hidden');
+            document.getElementById('dashboard-screen').classList.remove('flex');
+            document.getElementById('login-password').value = '';
+        }
+
+        function showDashboard() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('flex');
+            document.getElementById('dashboard-screen').classList.remove('hidden');
+            document.getElementById('dashboard-screen').classList.add('flex');
+            switchTab('chats');
+        }
+
+        // --- Tablarni almashtirish (Zamonaviy dizayn renderi bilan) ---
+        function switchTab(tabName) {
+            ['chats', 'qdrant', 'admins', 'logs', 'settings'].forEach(name => {
+                document.getElementById(`tab-${name}`).classList.add('hidden');
+                // Aktiv bo'lmagan tab tugmalari
+                document.getElementById(`btn-${name}`).className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition text-left text-slate-400 hover:bg-slate-800/60 hover:text-white";
+            });
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            // Aktiv tab tugmasi
+            document.getElementById(`btn-${tabName}`).className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition text-left bg-indigo-600 text-white shadow-lg shadow-indigo-600/10";
+
+            if(tabName === 'chats') loadSessions();
+            if(tabName === 'qdrant') loadQdrantData();
+            if(tabName === 'admins') loadAdmins();
+            if(tabName === 'logs') loadLogs();
+        }
+
+        // ── SUPER ADMIN SESSIONS ──
+        async function loadSessions() {
+            try {
+                // Superadmin endpointi xavfsiz saqlandi
+                const res = await fetch('/superadmin/sessions');
+                const data = await res.json();
+                allSessionsCached = data.active_sessions || [];
+                filterTableData();
+            } catch (e) {
+                console.log("Sessiyalarni yuklashda xatolik");
+            }
+        }
+
+        function filterTableData() {
+            const searchVal = document.getElementById('search-id').value.trim().toLowerCase();
+            const dateVal = document.getElementById('filter-date').value; 
+            const tbody = document.getElementById('session-table-body');
+            tbody.innerHTML = '';
+
+            // 1. Ma'lumotlarni oylar bo'yicha to'g'ri filtrlash
+            const filteredData = allSessionsCached.filter(session => {
+                const shortId = session.session_id.split('-').pop().toLowerCase();
+                const fullId = session.session_id.toLowerCase();
+                const matchesSearch = shortId.includes(searchVal) || fullId.includes(searchVal);
+
+                let matchesDate = true;
+                if (dateVal) {
+                    // Yangi backend (messages_by_month) mavjud bo'lsa
+                    if (session.messages_by_month && Object.keys(session.messages_by_month).length) {
+                        matchesDate = dateVal in session.messages_by_month;
+                    } else {
+                        // Eski backend — created_at yoki updated_at bo'yicha fallback
+                        matchesDate = (session.created_at && session.created_at.substring(0, 7) === dateVal) || 
+                              (session.updated_at && session.updated_at.substring(0, 7) === dateVal);
+                    }
+                }
+                return matchesSearch && matchesDate;
+            });
+
+            let totalMessagesSum = 0;
+            document.getElementById('stat-total-sessions').textContent = filteredData.length;
+
+            // Agar filtr natijasida hech narsa topilmasa
+            if (filteredData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 italic bg-white">Hech qanday faol suhbatlar topilmadi</td></tr>`;
+                document.getElementById('stat-total-messages').textContent = 0;
+                return;
+            }
+
+            // 2. Ma'lumotlarni aynan sizning jadvalingiz strukturasi bo'yicha render qilish
+            filteredData.forEach(session => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-100 hover:bg-slate-50/80 transition duration-150 cursor-pointer";
+        
+                // Qatordan biror joy bosilsa (tugmalardan tashqari), chat tarixini yuklaydi
+                tr.setAttribute('onclick', `loadChatHistory('${session.session_id}')`);
+
+                const shortId = session.session_id.split('-').pop(); 
+                const statusText = session.is_paused ? "Muzlatilgan" : "Faol";
+                const statusClass = session.is_paused ? "bg-amber-50 border border-amber-200 text-amber-700" : "bg-emerald-50 border border-emerald-200 text-emerald-700";
+                const btnPauseText = session.is_paused ? "▶️ Yoqish" : "⏸️ Pauza";
+
+                // Oy filtri tanlangan bo'lsa — faqat o'sha oydagi xabarlar sonini, aks holda umumiy xabarlar sonini hisoblaydi
+                let msgCount;
+                if (dateVal && session.messages_by_month && dateVal in session.messages_by_month) {
+                    msgCount = session.messages_by_month[dateVal];
+                } else {
+                    msgCount = session.messages_count || 0;
+                }
+        
+                totalMessagesSum += msgCount;
+
+                // Oylar bo'yicha mini statistika (Xabarlar soni ustuniga "title" sifatida biriktiriladi)
+                let monthsInfo = '';
+                if (session.messages_by_month && Object.keys(session.messages_by_month).length) {
+                    monthsInfo = Object.entries(session.messages_by_month)
+                        .sort((a, b) => a[0].localeCompare(b[0]))
+                        .map(([m, c]) => `${m}: ${c} ta`)
+                        .join(' | ');
+                }
+
+                const platformBadge = session.platform === "web" 
+                    ? `<span class="px-2 py-1 rounded-md bg-blue-50 border border-blue-100 text-blue-700 font-bold text-[10px]">🌐 WEB SYSTEM</span>`
+                    : `<span class="px-2 py-1 rounded-md bg-sky-50 border border-sky-100 text-sky-700 font-bold text-[10px]">🔹 TG BOT</span>`;
+
+                // Jadvalning asl dizayni saqlab qolindi
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-indigo-600 hover:underline" title="Tarixni ochish">
+                        id: ${shortId}
+                    </td>
+                    <td class="p-4">${platformBadge}</td>
+                    <td class="p-4 text-slate-500 whitespace-nowrap">${session.created_at || '-'}</td>
+                    <td class="p-4 text-slate-600 font-medium whitespace-nowrap">${session.updated_at || '-'}</td>
+                    <td class="p-4 text-center font-bold text-slate-700" title="${monthsInfo || 'Statistika mavjud emas'}">
+                        ${msgCount} ta
+                    </td>
+                    <td class="p-4 text-center">
+                        <span class="px-2.5 py-0.5 rounded-full font-semibold text-[11px] ${statusClass}">${statusText}</span>
+                    </td>
+                    <td class="p-4 text-center flex justify-center gap-2" onclick="event.stopPropagation();">
+                        <button onclick="togglePauseSession('${session.session_id}')" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-medium transition shadow-sm">
+                            ${btnPauseText}
+                        </button>
+                        <button onclick="deleteSessionFromDb('${session.session_id}')" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-medium transition shadow-sm" title="O'chirish">
+                            🗑️
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Jami filtrlangan xabarlar sonini hisoblagichga yozamiz
+            document.getElementById('stat-total-messages').textContent = totalMessagesSum;
+        }
+
+        function clearFilters() {
+            document.getElementById('search-id').value = '';
+            document.getElementById('filter-date').value = '';
+            filterTableData();
+        }
+
+        async function togglePauseSession(sessionId) {
+            if(!confirm("Sessiya holatini o'zgartirmoqchimisiz?")) return;
+            try {
+                const res = await fetch(`/superadmin/sessions/${sessionId}/toggle-pause`, { method: 'PUT' });
+                if(res.ok) {
+                    loadSessions();
+                } else {
+                    alert("Xatolik yuz berdi.");
+                }
+            } catch (error) {
+                alert("Server bilan aloqa uzildi.");
+            }
+        }
+
+        async function deleteSessionFromDb(sessionId) {
+            if(!confirm("⚠️ DIQQAT! Tizim bosh boshqaruvchisi sifatida ushbu suhbatni va uning barcha xabarlarini bazadan butunlay o'chirasizmi?")) return;
+            try {
+                const res = await fetch(`/superadmin/sessions/${sessionId}`, { method: 'DELETE' });
+                if(res.ok) {
+                    alert("Sessiya muvaffaqiyatli o'chirildi.");
+                    loadSessions();
+                    document.getElementById('chat-history').innerHTML = '<div class="text-slate-400 text-center my-auto px-4 text-xs italic">Suhbat tarixini ko\'rish uchun chap tomondan ID tanlang.</div>';
+                    document.getElementById('current-session').textContent = "Sessiyani tanlang";
+                } else {
+                    alert("O'chirishda xatolik yuz berdi.");
+                }
+            } catch (error) {
+                alert("Server bilan aloqa uzildi.");
+            }
+        }
+
+        async function loadChatHistory(session_id) {
+            document.getElementById('current-session').textContent = "Sessiya ID: " + session_id;
+            const res = await fetch(`/superadmin/sessions/${session_id}`);
+            const data = await res.json();
+            const historyDiv = document.getElementById('chat-history');
+            historyDiv.innerHTML = '';
+            
+            data.chat_history.forEach(msg => {
+                const isUser = msg.sender === 'user';
+                const div = document.createElement('div');
+                div.className = isUser 
+                    ? "bg-indigo-600 text-white p-3 rounded-2xl rounded-tr-none self-end max-w-[85%] shadow-sm text-sm" 
+                    : "bg-white border border-slate-100 text-slate-800 p-3 rounded-2xl rounded-tl-none self-start max-w-[85%] shadow-sm text-sm";
+                
+                const metaColor = isUser ? "text-indigo-200" : "text-slate-400";
+                div.innerHTML = `<div class="text-[10px] font-bold mb-1 uppercase tracking-wider ${metaColor}">${isUser ? 'Mijoz' : 'Bot AI'}</div><p class="leading-relaxed whitespace-pre-wrap">${msg.text}</p>`;
+                historyDiv.appendChild(div);
+            });
+            // Avtomatik quyiga skroll qilish
+            historyDiv.scrollTop = historyDiv.scrollHeight;
+        }
+
+        // =======================================
+        // QDRANT BAZASINI BOSHQARISH
+        // =======================================
+        async function fetchFromUrl() {
+            const url = document.getElementById('scrape-url').value;
+            if(!url) return alert("URL kiriting!");
+            document.getElementById('btn-scrape').innerText = "Kuting... ⏳";
+            const res = await fetch('/superadmin/scrape', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url}) });
+            const data = await res.json();
+            document.getElementById('btn-scrape').innerText = "Matnni olish";
+            if(res.ok) document.getElementById('qdrant-text').value = data.text;
+            else alert("Xatolik: " + data.detail);
+        }
+
+        async function addToQdrant() {
+            const url = document.getElementById('scrape-url').value;
+            const title = document.getElementById('qdrant-title').value;
+            const content = document.getElementById('qdrant-text').value;
+            if(!content) return alert("Matn bo'sh!");
+    
+            const res = await fetch('/superadmin/qdrant/add', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ url, title, content }) 
+            });
+            if(res.ok) {
+                alert("Muvaffaqiyatli saqlandi! ✅");
+                document.getElementById('qdrant-text').value = '';
+                document.getElementById('qdrant-title').value = '';
+                document.getElementById('scrape-url').value = '';
+                loadQdrantData();
+            } else alert("Saqlashda xatolik yuz berdi.");
+        }
+
+        // Tanlangan fayllarni saqlash uchun global o'zgaruvchi
+        let selectedFiles = [];
+
+        // 1. Fayllar oynadan oddiy tanlanganda
+        function handleFileSelect(event) {
+            const files = Array.from(event.target.files);
+            if (!files.length) return;
+            addFilesToSelection(files);
+        }
+
+        // 2. Fayllar sudrab kelib drop-zone'ga tashlanganda
+        function handleFileDrop(event) {
+            event.preventDefault();
+            document.getElementById('drop-zone').classList.remove('bg-red-50', 'border-red-400');
+
+            const files = Array.from(event.dataTransfer.files);
+            if (!files.length) return;
+
+            // Faqat ruxsat etilgan formatlarni saralash
+            const allowedExtensions = ['.pdf', '.doc', '.docx'];
+            const filteredFiles = files.filter(file => {
+                const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+                return allowedExtensions.includes(ext);
+            });
+
+            addFilesToSelection(filteredFiles);
+        }
+
+        // Fayllarni massivga qo'shish va interfeysni yangilash
+        function addFilesToSelection(files) {
+            selectedFiles = [...selectedFiles, ...files];
+            renderFilePreviews();
+        }
+
+        // Tanlangan barcha fayllarni chiroyli render qilish
+        function renderFilePreviews() {
+            const container = document.getElementById('file-preview-list');
+            const btnUpload = document.getElementById('btn-upload-file'); // ID to'g'rilandi
+
+            if (selectedFiles.length === 0) {
+                container.innerHTML = '';
+                btnUpload.disabled = true; // Fayl bo'lmasa tugma qulflanadi
+                return;
+            }
+
+            // Tugmani faollashtirish
+            btnUpload.disabled = false;
+
+            // Har bir fayl uchun alohida qator yaratish
+            container.innerHTML = selectedFiles.map((file, index) => `
+                <div class="flex items-center gap-2 bg-white border border-red-100 rounded-lg px-3 py-2 text-sm shadow-sm">
+                    <span class="text-lg shrink-0">📄</span>
+                    <span class="flex-1 truncate text-gray-700 font-medium text-xs" title="${file.name}">${file.name}</span>
+                    <span class="text-gray-400 text-[10px] whitespace-nowrap">${(file.size / (1024 * 1024)).toFixed(2)} MB</span>
+                    <button onclick="removeSelectedFile(${index})" class="text-red-400 hover:text-red-600 font-bold text-base leading-none ml-1 cursor-pointer">✕</button>
+                </div>
+            `).join('');
+        }
+
+        // Ro'yxatdan bitta faylni o'chirish
+        function removeSelectedFile(index) {
+            selectedFiles.splice(index, 1);
+            renderFilePreviews();
+
+            if (selectedFiles.length === 0) {
+                document.getElementById('file-upload').value = ''; // ID to'g'rilandi
+            }
+        }
+
+        // Hammasini tozalash (Muvaffaqiyatli yuklangandan so'ng)
+        function clearFile() {
+            selectedFiles = [];
+            renderFilePreviews();
+            document.getElementById('file-upload').value = ''; // ID to'g'rilandi
+
+            const el = document.getElementById('upload-alert');
+            if(el) {
+                el.className = 'text-sm font-medium hidden';
+                el.textContent = '';
+            }
+        }
+
+        // Xabar chiqarish tizimi
+        function showUploadAlert(msg, cls) {
+            const el = document.getElementById('upload-alert');
+            if(!el) return;
+            el.textContent = msg;
+            
+            // Rnglarni to'g'rilash
+            let bgClass = cls === 'ua-green' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
+                        : cls === 'ua-red' ? 'bg-red-50 text-red-600 border-red-200' 
+                        : 'bg-blue-50 text-blue-600 border-blue-200';
+
+            el.className = `text-[10px] font-bold p-2.5 rounded-xl text-center border block mb-4 ${bgClass}`;
+        }
+
+        // Serverga yuborish
+        async function uploadFiles() {
+            if (!selectedFiles.length) return;
+
+            const btn = document.getElementById('btn-upload-file');
+            btn.disabled = true;
+            btn.textContent = 'Yuklanmoqda...';
+
+            const formData = new FormData();
+            selectedFiles.forEach(file => formData.append('files', file));
+
+            try {
+                const response = await fetch('/superadmin/upload-file', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(data.message || "Fayllar muvaffaqiyatli yuklandi!");
+                    selectedFiles = [];
+                    renderFilePreviews();
+                    loadQdrantData(); // Jadvalni yangilash
+                } else {
+                    alert("Xatolik: " + (data.detail || "Noma'lum xato"));
+                }
+            } catch (e) {
+                alert("Server bilan aloqa muammosi!");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Tanlangan fayllarni indekslash";
+            }
+        }
+
+        let allLogs = []; 
+
+        let adminsLoaded = false; // Adminlar ro'yxati takroran yuklanishini oldini olish
+
+        // 1. 🔍 Asosiy filtrlash va ma'lumot yuklash funksiyasi (To'g'ridan-to'g'ri Backendga so'rov yuboradi)
+        async function filterLogs() {
+            const title = document.getElementById('log-search-title').value.trim();
+            const admin = document.getElementById('log-filter-admin').value;
+            const status = document.getElementById('log-filter-action').value;
+
+            // URL Query parametrlarni tayyorlaymiz
+            const params = new URLSearchParams();
+            if (title) params.append('title', title);
+            if (admin) params.append('admin', admin);
+            if (status) params.append('status', status);
+
+            try {
+                // Yangilangan endpointga so'rov yuboramiz
+                const res = await fetch(`/superadmin/qdrant/logs?${params.toString()}`);
+                const data = await res.json();
+                const logs = data.logs || [];
+                
+                // Faqat ilk yuklanishda (hech qanday filtr yo'qligida) admin dropdownini to'ldiramiz
+                if (!adminsLoaded && !title && !admin && !status) {
+                    populateAdminDropdown(logs);
+                    adminsLoaded = true;
+                }
+
+                renderLogs(logs);
+            } catch (e) {
+                console.error("Ma'lumot olishda xatolik:", e);
+                const tbody = document.getElementById('logs-table-body');
+                if (tbody) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-red-500 font-medium">Server bilan aloqa o'rnatilmadi</td></tr>`;
+                }
+            }
+        }
+
+        // 2. Admin dropdown ro'yxatini shakllantirish
+        function populateAdminDropdown(logs) {
+            const adminSelect = document.getElementById('log-filter-admin');
+            if (!adminSelect) return;
+
+            const admins = new Set(logs.map(log => log.added_by).filter(Boolean));
+            adminSelect.innerHTML = '<option value="">Barcha adminlar</option>';
+            
+            Array.from(admins).sort().forEach(admin => {
+                const opt = document.createElement('option');
+                opt.value = admin;
+                opt.textContent = admin;
+                adminSelect.appendChild(opt);
+            });
+        }
+
+        // 3. 🧹 Filtrlarni tozalash tugmasi
+        function clearLogFilters() {
+            document.getElementById('log-search-title').value = '';
+            document.getElementById('log-filter-admin').value = '';
+            document.getElementById('log-filter-action').value = '';
+            filterLogs(); // Parametrsiz qayta chaqiradi (hamma ma'lumotni tiklaydi)
+        }
+
+        // 4. 🗑 Barcha loglarni tozalash funksiyasi
+        async function clearAllLogs() {
+            if (!confirm("Haqiqatan ham barcha audit loglarini o'chirmoqchimisiz?")) return;
+            try {
+                const res = await fetch('/superadmin/qdrant/logs', { method: 'DELETE' });
+                if (res.ok) {
+                    alert("Barcha loglar muvaffaqiyatli o'chirildi.");
+                    filterLogs();
+                } else {
+                    alert("O'chirishda xatolik yuz berdi.");
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // 5. 📊 Loglarni jadvalga chiqarish (Siz taqdim etgan HTML tartibida)
+        function renderLogs(logs) {
+            const tbody = document.getElementById('logs-table-body');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+
+            if (logs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 italic">Hech qanday log topilmadi</td></tr>`;
+                return;
+            }
+
+            logs.forEach(log => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-gray-100 hover:bg-gray-50/50 transition text-gray-700";
+
+                // Amal turi banchlarining dizayni
+                const rawStatus = (log.status || '').toLowerCase().replace(/`/g, "'");
+                let statusClass = '';
+                if (rawStatus.includes('yangi')) {
+                    statusClass = 'bg-emerald-50 text-emerald-700 border-emerald-100 px-2.5 py-1 rounded-xl text-[11px] font-bold inline-block border';
+                } else if (rawStatus.includes('o\'zgargan') || rawStatus.includes('o`zgargan')) {
+                    statusClass = 'bg-amber-50 text-amber-700 border-amber-100 px-2.5 py-1 rounded-xl text-[11px] font-bold inline-block border';
+                } else if (rawStatus.includes('o\'chirildi') || rawStatus.includes('ochirildi')) {
+                    statusClass = 'bg-rose-50 text-rose-700 border-rose-100 px-2.5 py-1 rounded-xl text-[11px] font-bold inline-block border';
+                } else {
+                    statusClass = 'bg-gray-50 text-gray-700 border-gray-100 px-2.5 py-1 rounded-xl text-[11px] font-bold inline-block border';
+                }
+
+                // URL yoki Fayl dizayni
+                const urlDisplay = log.url 
+                    ? `<a href="${log.url}" target="_blank" class="text-blue-600 hover:underline font-medium max-w-[220px] truncate block" title="${log.url}">${log.url}</a>`
+                    : `<span class="text-gray-400 italic">Yuklangan Fayl</span>`;
+
+                tr.innerHTML = `
+                    <td class="p-4 font-medium text-gray-400">${log.id || '#'}</td>
+                    <td class="p-4">${urlDisplay}</td>
+                    <td class="p-4 font-semibold text-gray-900 break-words max-w-[250px]">${log.title || 'Sarlavhasiz'}</td>
+                    <td class="p-4 text-gray-600 font-medium">👤 ${log.added_by || 'Tizim'}</td>
+                    <td class="p-4 whitespace-nowrap"><span class="${statusClass}">${log.status || 'Noma\'lum'}</span></td>
+                    <td class="p-4 text-gray-400 whitespace-nowrap">${log.created_at || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Sahifa yuklanishi bilan loglarni avtomat chaqiramiz
+        document.addEventListener('DOMContentLoaded', filterLogs);
+
+        // Filtrlarni tozalash
+        async function clearLogFilters() {
+            document.getElementById('log-search-title').value = '';
+            document.getElementById('log-filter-admin').value = '';
+            document.getElementById('log-filter-action').value = '';
+            if (!allLogs.length) {
+                await loadLogs();
+            } else {
+                filterLogs();
+            }
+        }
+
+        let qdrantFullData = []; 
+
+        async function loadQdrantData() {
+            try {
+                const r = await fetch('/superadmin/qdrant/list');
+                const result = await r.json();
+                if (!r.ok) return;
+        
+                qdrantFullData = result.data || [];
+                const tbody = document.getElementById('qdrant-table-body');
+                tbody.innerHTML = '';
+        
+                if (!qdrantFullData.length) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 italic">Bazaga hali hech narsa qo\'shilmagan</td></tr>';
+                    return;
+                }
+        
+                qdrantFullData.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-slate-100 hover:bg-slate-50/80 transition text-slate-700";
+
+                    // 1. Manba qiymatini tekshirish
+                    const manbaDisplay = String(item.url).startsWith('http')
+                        ? `<a href="${item.url}" target="_blank" class="text-indigo-600 hover:underline font-medium">${item.url.substring(0,20)}…</a>`
+                        : `<span class="text-slate-400 font-medium">Hujjat/Fayl</span>`;
+
+                    // Holat uchun ranglar
+                    const statusClass = item.holat === 'Yangi' 
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                        : (item.holat && (item.holat.includes('O\'zgargan') || item.holat === 'O\'zgargan'))
+                            ? 'bg-amber-50 text-amber-700 border-amber-200' 
+                            : 'bg-gray-50 text-gray-700';
+
+                    // Admin username ni to'g'ri olish
+                    const adminName = item.admin || item.added_by || item.superadmin || 'Noma\'lum';
+
+                    tr.innerHTML = `
+                        <td class="p-3 truncate font-medium text-slate-500">${manbaDisplay}</td>
+                        
+                        <td class="p-3 font-semibold text-slate-800 break-words" title="${item.title || ''}">
+                            ${item.title || 'Sarlavhasiz'}
+                        </td>
+                        
+                        <td class="p-3 text-slate-500 truncate cursor-pointer hover:text-indigo-600 hover:underline" 
+                            onclick="showModal('${item.id}')" 
+                            title="To'liq ko'rish uchun bosing">
+                            ${item.matn_parchasi || ''}
+                        </td>
+                        
+                        <td class="p-3 text-center whitespace-nowrap">
+                            <span class="px-2 py-0.5 rounded-md border text-[10px] font-bold ${statusClass}">
+                                ${item.holat || 'Yangi'}
+                            </span>
+                            <div class="text-[10px] text-slate-400 mt-1">👤 ${adminName}</div>
+                        </td>
+                        
+                        <td class="p-3 text-center whitespace-nowrap">
+                            <button onclick="deleteQdrantItem('${item.id}')" 
+                                    class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-[11px] font-bold rounded-md transition cursor-pointer">
+                                🗑 O'chirish
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) { 
+                console.error("Jadvalni yuklashda xatolik:", e); 
+            }
+        }
+
+        function showModal(id) {
+            const item = qdrantFullData.find(x => String(x.id) === String(id));
+            if (item) {
+                document.getElementById('modal-content').textContent = item.toliq_matn;
+                document.getElementById('text-modal').classList.remove('hidden');
+                document.getElementById('text-modal').classList.add('flex');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('text-modal').classList.add('hidden');
+            document.getElementById('text-modal').classList.remove('flex');
+        }
+
+        async function deleteQdrantItem(id) {
+            if (!confirm(`Ushbu matn bo'lagini bazadan butunlay o'chirib tashlamoqchimisiz?`)) {
+                return;
+            }
+            try {
+                const res = await fetch('/superadmin/qdrant/delete', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    loadQdrantData(); 
+                } else {
+                    alert("❌ Xatolik: " + data.detail);
+                }
+            } catch (e) {
+                alert("Server bilan ulanishda xatolik yuz berdi!");
+            }
+        }
+
+        async function clearAllQdrant() {
+            if (!confirm("⚠️ DIQQAT! Bazadagi BARCHA ma'lumotlar o'chib ketadi. Buni tasdiqlaysizmi?")) return;
+            if (!confirm("Ishonchingiz komilmi? Bu amalni orqaga qaytarib bo'lmaydi!")) return;
+
+            try {
+                const response = await fetch(`/superadmin/qdrant/delete-all`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    alert("Baza butunlay tozalandi! 🧹");
+                    loadQdrantData(); 
+                } else {
+                    alert("Tozalashda xatolik yuz berdi.");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Server bilan aloqa yo'q.");
+            }
+        }
+
+        // =======================================
+        // ADMINLARNI BOSHQARISH
+        // =======================================
+        async function loadAdmins() {
+            const res = await fetch('/superadmin/admins/list');
+            const data = await res.json();
+            const tbody = document.getElementById('admins-table-body');
+            tbody.innerHTML = '';
+            data.admins.forEach(admin => {
+                const date = new Date(admin.created_at).toLocaleDateString('uz-UZ');
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50/60 transition">
+                        <td class="p-4 text-slate-400 font-medium">#${admin.id}</td>
+                        <td class="p-4 font-semibold text-slate-800">${admin.username}</td>
+                        <td class="p-4 text-slate-500">${date}</td>
+                        <td class="p-4 text-right whitespace-nowrap">
+                            <button onclick="resetPassword(${admin.id}, '${admin.username}')" class="text-indigo-600 hover:text-indigo-800 font-bold text-xs mr-4 transition">Parolni yangilash</button>
+                            <button onclick="deleteAdmin(${admin.id}, '${admin.username}')" class="text-rose-600 hover:text-rose-800 font-bold text-xs transition">O'chirish</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function addAdmin() {
+            const username = document.getElementById('new-admin-user').value;
+            const password = document.getElementById('new-admin-pass').value;
+            if(!username || !password) return alert("Barcha maydonlarni to'ldiring!");
+            
+            const res = await fetch('/superadmin/admins/add', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if(res.ok) {
+                alert(data.message || "Admin muvaffaqiyatli qo'shildi!");
+                document.getElementById('new-admin-user').value = '';
+                document.getElementById('new-admin-pass').value = '';
+                loadAdmins();
+            } else alert(data.detail);
+        }
+
+        async function resetPassword(id, username) {
+            const newPass = prompt(`"${username}" uchun yangi parolni kiriting:`);
+            if(!newPass) return;
+
+            const res = await fetch(`/superadmin/admins/${id}/reset-password`, {
+                method: 'PUT', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ new_password: newPass })
+            });
+            if(res.ok) alert("Parol muvaffaqiyatli yangilandi! ✅");
+            else alert("Xatolik yuz berdi.");
+        }
+
+        async function deleteAdmin(id, username) {
+            if(!confirm(`Rostdan ham "${username}" adminni o'chirib tashlamoqchimisiz?`)) return;
+
+            const res = await fetch(`/superadmin/admins/${id}/delete`, { method: 'DELETE' });
+            if(res.ok) loadAdmins();
+        }
+
+        // =======================================
+        // BAZA TARIXI (AUDIT LOGS)
+        // =======================================
+        async function loadLogs() {
+            const res = await fetch('/superadmin/qdrant/logs');
+            const data = await res.json();
+            const tbody = document.getElementById('logs-table-body');
+            tbody.innerHTML = '';
+
+            if (!data.logs || data.logs.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="p-8 text-center text-slate-400 italic bg-white">
+                            Hozircha hech qanday log yo‘q
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            data.logs.forEach(log => {
+                const date = new Date(log.created_at).toLocaleString('uz-UZ');
+
+                // Status ranglarini to'g'ri belgilash
+                let statusClass = 'bg-blue-50 border border-blue-100 text-blue-800';
+                
+                if (log.status && (log.status.includes('Yangi') || log.status === 'Yangi')) {
+                    statusClass = 'bg-emerald-50 border border-emerald-100 text-emerald-700';
+                } else if (log.status && (log.status.includes('O\'zgargan') || log.status === 'O\'zgargan')) {
+                    statusClass = 'bg-amber-50 border border-amber-100 text-amber-700';
+                } else if (log.status && log.status.includes('o\'chirildi')) {
+                    statusClass = 'bg-rose-50 border border-rose-100 text-rose-700';
+                }
+
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50/50 transition">
+                        <td class="p-4 text-slate-400 font-medium">#${log.id}</td>
+                        <td class="p-4 text-indigo-600 truncate max-w-xs font-medium" title="${log.url || ''}">
+                            <a href="${log.url || '#'}" target="_blank" class="hover:underline">
+                                ${log.url ? (log.url.length > 45 ? log.url.substring(0, 42) + '...' : log.url) : 'Qo\'lda kiritilgan / Fayl'}
+                            </a>
+                        </td>
+                        <td class="p-4 truncate max-w-xs text-slate-700 font-medium" title="${log.title || ''}">
+                            ${log.title || 'Sarlavhasiz'}
+                        </td>
+                        <td class="p-4 font-bold text-slate-800">👤 ${log.added_by || 'Noma\'lum'}</td>
+                        <td class="p-4">
+                            <span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold ${statusClass}">
+                                ${log.status || 'Noma\'lum'}
+                            </span>
+                        </td>
+                        <td class="p-4 text-slate-400 text-xs whitespace-nowrap">${date}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function clearAllLogs() {
+            if (!confirm("⚠️ DIQQAT! BARCHA loglar butunlay o'chiriladi. Bu amalni orqaga qaytarib bo'lmaydi!\n\nDavom ettirasizmi?")) {
+                return;
+            }
+            
+            if (!confirm("Ishonchingiz komilmi? Bu juda katta amal!")) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/superadmin/qdrant/logs/clear-all', {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(data.message || "Barcha loglar muvaffaqiyatli tozalandi!");
+                    loadLogs(); // Jadvalni yangilash
+                } else {
+                    alert("Xatolik: " + (data.detail || "Noma'lum xato"));
+                }
+            } catch (e) {
+                alert("Server bilan aloqa muammosi!");
+            }
+        }
+
+        // Tizimni yuklashni boshlash
+        checkAuth();
+    </script>
+</body>
+</html>

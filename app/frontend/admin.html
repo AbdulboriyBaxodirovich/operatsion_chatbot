@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <title>BRB Admin Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --red:#c8102e;--red2:#a50d24;--red3:#8b0a1e;
+      --bg:#f5f6fa;--bg2:#ffffff;--bg3:#f0f1f5;
+      --border:#e5e7ef;--border2:#d1d5e0;
+      --txt:#1a1d2e;--txt2:#6b7280;--txt3:#9ca3af;
+      --green:#16a34a;--amber:#d97706;--blue:#2563eb;
+      --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+      --shadow2:0 8px 32px rgba(200,16,46,.18);
+      --r:12px;--r2:8px;
+    }
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+    ::-webkit-scrollbar{width:5px;height:5px}
+    ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+    /* LOGIN */
+    #login-screen{position:fixed;inset:0;z-index:100;background:linear-gradient(135deg,#1a0a0f 0%,#2d0914 50%,#1a0a0f 100%);display:flex;align-items:center;justify-content:center;padding:20px}
+    .login-card{background:#fff;border-radius:20px;padding:40px;width:100%;max-width:400px;box-shadow:0 24px 64px rgba(0,0,0,.4)}
+    .login-logo{width:56px;height:56px;background:var(--red);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;margin:0 auto 20px;box-shadow:var(--shadow2)}
+    .login-card h1{text-align:center;font-size:22px;font-weight:700;margin-bottom:4px}
+    .login-card p{text-align:center;font-size:13px;color:var(--txt2);margin-bottom:28px}
+    .login-alert{background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:var(--r2);padding:10px 14px;font-size:13px;margin-bottom:16px;display:none}
+    .field-label{font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:block}
+    .field-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r2);font-size:14px;color:var(--txt);outline:none;transition:border-color .15s;font-family:inherit;margin-bottom:14px}
+    .field-input:focus{border-color:var(--red)}
+    .btn-primary{width:100%;padding:12px;background:var(--red);color:#fff;border:none;border-radius:var(--r2);font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;font-family:inherit;margin-top:4px}
+    .btn-primary:hover{background:var(--red2)}
+    .btn-primary:active{background:var(--red3)}
+
+    /* APP */
+    #app{display:flex;height:100vh;opacity:0;transition:opacity .3s}
+    #app.visible{opacity:1}
+
+    /* SIDEBAR */
+    #sidebar{width:240px;min-width:240px;background:var(--txt);display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.06)}
+    .sb-logo{padding:18px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+    .sb-logo-icon{width:36px;height:36px;background:var(--red);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0}
+    .sb-logo-text h2{font-size:13px;font-weight:700;color:#fff}
+    .sb-logo-text span{font-size:10px;color:rgba(255,255,255,.4);font-weight:500}
+    
+    /* User info pastga tushirildi */
+    .sb-user{margin-top:auto;padding:12px 16px;border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:10px}
+    .sb-av{width:30px;height:30px;border-radius:9px;background:rgba(200,16,46,.7);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+    .sb-uname{font-size:12px;font-weight:600;color:#fff;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sb-ustat{font-size:10px;color:#22c55e;display:flex;align-items:center;gap:3px}
+    .sb-ustat::before{content:'';width:5px;height:5px;border-radius:50%;background:#22c55e;display:inline-block}
+
+    .sb-nav{flex:1;padding:8px;overflow-y:auto}
+    .sb-nav-btn{width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r2);border:none;background:transparent;color:rgba(255,255,255,.5);font-size:13px;font-weight:500;cursor:pointer;text-align:left;transition:all .15s;font-family:inherit;margin-bottom:1px}
+    .sb-nav-btn:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.85)}
+    .sb-nav-btn.active{background:var(--red);color:#fff}
+    .sb-nav-btn svg{width:16px;height:16px;flex-shrink:0;opacity:.8}
+    .sb-nav-btn.active svg{opacity:1}
+    .sb-footer{padding:12px;border-top:1px solid rgba(255,255,255,.06)}
+    .btn-logout{width:100%;padding:9px;background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.3);border-radius:var(--r2);color:#f87171;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+    .btn-logout:hover{background:rgba(220,38,38,.25);color:#fca5a5}
+
+    /* MAIN */
+    #main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+    .tab-panel{display:none;flex:1;overflow:hidden}
+    .tab-panel.active{display:flex;flex-direction:column}
+
+    /* CHATS TAB */
+    .chats-layout{display:flex;height:100%;min-height:0}
+    .sessions-pane{width:55%;border-right:1px solid var(--border);display:flex;flex-direction:column;min-width:0}
+    .chat-view-pane{flex:1;display:flex;flex-direction:column;min-width:0}
+
+    /* PANEL HEADER */
+    .pane-hdr{padding:14px 18px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    .pane-hdr h3{font-size:13px;font-weight:700}
+    .pane-hdr-sub{font-size:11px;color:var(--txt2)}
+
+    /* STATS */
+    .stat-row{display:flex;gap:10px;padding:12px 18px;background:var(--bg3);border-bottom:1px solid var(--border);flex-shrink:0}
+    .stat-card{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:10px 14px;text-align:center}
+    .stat-label{font-size:10px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.06em}
+    .stat-val{font-size:20px;font-weight:700;margin-top:2px}
+    .stat-val.red{color:var(--red)}
+    .stat-val.blue{color:var(--blue)}
+
+    /* FILTERS */
+    .filter-row{display:flex;gap:8px;padding:10px 18px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+    .fi{padding:7px 12px;border:1.5px solid var(--border);border-radius:var(--r2);font-size:12px;color:var(--txt);outline:none;font-family:inherit;transition:border-color .15s;background:var(--bg2)}
+    .fi:focus{border-color:var(--red)}
+    .fi.flex-1{flex:1;min-width:140px}
+    .btn-sm{padding:7px 12px;border-radius:var(--r2);font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid var(--border);background:var(--bg3);color:var(--txt2);font-family:inherit;transition:all .15s}
+    .btn-sm:hover{background:var(--border);color:var(--txt)}
+    .btn-refresh{padding:7px 12px;border-radius:var(--r2);font-size:12px;font-weight:600;cursor:pointer;border:none;background:var(--red);color:#fff;font-family:inherit;transition:background .15s}
+    .btn-refresh:hover{background:var(--red2)}
+
+    /* TABLE */
+    .tbl-wrap{flex:1;overflow:auto}
+    .tbl{width:100%;border-collapse:collapse;font-size:12px}
+    .tbl thead th{padding:10px 14px;background:var(--bg3);border-bottom:1px solid var(--border);font-weight:600;color:var(--txt2);text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;position:sticky;top:0;z-index:1}
+    .tbl tbody tr{border-bottom:1px solid var(--border);transition:background .1s;cursor:pointer}
+    .tbl tbody tr:hover{background:var(--bg3)}
+    .tbl td{padding:10px 14px;color:var(--txt);vertical-align:middle}
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+    .badge-green{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+    .badge-amber{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+    .badge-web{background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe}
+    .badge-red{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+    .btn-tbl{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+    .btn-pause{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+    .btn-pause:hover{background:#fde68a}
+    .btn-del{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+    .btn-del:hover{background:#fecaca}
+    .link-id{color:var(--red);font-weight:700;font-family:'SF Mono','Fira Code',monospace;font-size:11px}
+
+    /* CHAT VIEW */
+    .chat-view-hdr { padding: 12px 16px; background: var(--bg2); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .chat-view-hdr h4 { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-view-hdr p { font-size: 10px; color: var(--txt2); margin-top: 1px; }    
+    #chat-history { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; background: var(--bg3); }
+    .ch-empty { color: var(--txt3); font-size: 12px; text-align: center; margin: auto; padding: 20px; }
+    .ch-msg { max-width: 85%; padding: 9px 13px; border-radius: 12px; font-size: 13px; line-height: 1.55; word-break: break-word; }
+    .ch-msg.bot { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px 12px 12px 3px; align-self: flex-start; }
+    .ch-msg.usr { background: var(--red); color: #fff; border-radius: 12px 12px 3px 12px; align-self: flex-end; }
+    .ch-role { font-size: 10px; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .06em; opacity: .6; }
+    .ch-msg.usr .ch-role {color: #ffffff;opacity: 0.9;}
+
+    /* QDRANT TAB */
+    .qdrant-wrap{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
+    .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+    .card-hdr{font-size:13px;font-weight:700;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+    .card-hdr-icon{width:28px;height:28px;border-radius:8px;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+    .upload-zone{border:2px dashed var(--border2);border-radius:var(--r2);padding:20px;text-align:center;cursor:pointer;transition:all .15s;position:relative}
+    .upload-zone:hover{border-color:var(--red);background:#fff5f6}
+    .upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+    .upload-zone p{font-size:12px;color:var(--txt2)}
+    .upload-zone strong{font-size:13px;color:var(--txt)}
+    .file-pill{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:8px 12px;font-size:12px;display:none}
+    .file-pill.show{display:flex}
+    .btn-upload{padding:10px 20px;background:var(--red);color:#fff;border:none;border-radius:var(--r2);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;width:100%}
+    .btn-upload:hover{background:var(--red2)}
+    .btn-upload:disabled{opacity:.5;cursor:not-allowed}
+    .upload-alert{font-size:12px;padding:8px 12px;border-radius:var(--r2);display:none}
+    .upload-alert.show{display:block}
+    .ua-green{background:#dcfce7;color:#15803d}
+    .ua-red{background:#fee2e2;color:#dc2626}
+    .ua-blue{background:#dbeafe;color:#1d4ed8}
+    .textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r2);font-size:13px;color:var(--txt);outline:none;font-family:inherit;transition:border-color .15s;resize:vertical}
+    .textarea:focus{border-color:var(--red)}
+    .qdrant-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .btn-danger{padding:9px 16px;background:#fff1f2;border:1.5px solid #fecdd3;color:#e11d48;border-radius:var(--r2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+    .btn-danger:hover{background:#ffe4e6;border-color:#fda4af}
+    .qdrant-alert{padding:10px 14px;border-radius:var(--r2);font-size:12px;display:none;margin-top:10px}
+    .qdrant-alert.show{display:block}
+    .qa-green{background:#dcfce7;color:#15803d}
+    .qa-red{background:#fee2e2;color:#dc2626}
+    .qa-blue{background:#dbeafe;color:#1d4ed8}
+
+    /* MODAL */
+    #modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:200;padding:20px;backdrop-filter:blur(4px)}
+    #modal.show{display:flex}
+    .modal-box{background:#fff;border-radius:var(--r);max-width:680px;width:100%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.3)}
+    .modal-hdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+    .modal-hdr h3{font-size:14px;font-weight:700}
+    .modal-close{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;font-size:16px;color:var(--txt2);display:flex;align-items:center;justify-content:center;transition:all .15s}
+    .modal-close:hover{background:#fee2e2;border-color:#fecaca;color:#dc2626}
+    .modal-body{flex:1;overflow-y:auto;padding:20px;font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--txt)}
+    .modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end}
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">BRB</div>
+    <h1>Admin Panel</h1>
+    <p>BRB Bank boshqaruv tizimi</p>
+    <div class="login-alert" id="login-alert"></div>
+    <label class="field-label" for="login-username">Foydalanuvchi nomi</label>
+    <input class="field-input" type="text" id="login-username" placeholder="admin" autocomplete="username">
+    <label class="field-label" for="login-password">Maxfiy parol</label>
+    <input class="field-input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')loginAdmin()">
+    <button class="btn-primary" onclick="loginAdmin()">Tizimga kirish</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-icon">BRB</div>
+      <div class="sb-logo-text">
+        <h2>BRB Admin</h2>
+        <span>Boshqaruv paneli</span>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <button class="sb-nav-btn active" id="btn-chats" onclick="switchTab('chats')">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+        Suhbatlar tarixi
+      </button>
+      <button class="sb-nav-btn" id="btn-qdrant" onclick="switchTab('qdrant')">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
+        Baza (Qdrant)
+      </button>
+    </nav>
+
+    <!-- eab pastga tushirildi -->
+    <div class="sb-user-container" style="position: relative; width: 100%;">
+  
+        <!-- Foydalanuvchi bloki (Bosilganda menyu ochiladi) -->
+        <div class="sb-user" onclick="togglePanelMenu()" style="cursor: pointer; display: flex; align-items: center; gap: 12px; user-select: none;">
+            <div class="sb-av">A</div>
+            <div style="flex: 1; min-width: 0;">
+                <div class="sb-uname" id="current-username" style="font-weight: 600;">eab</div>
+                <div class="sb-ustat" style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #10b981;">
+                    <!-- animate-pulse klassi qo'shildi -->
+                    <span class="animate-pulse" style="width: 6px; height: 6px; background: #10b981; border-radius: 50%; display: inline-block;"></span>
+                    tizimda faol
+                </div>
+            </div>
+            <button onclick="event.stopPropagation(); logoutAdmin()" style="background: none; border: none; color: #f87171; cursor: pointer; font-size: 18px; padding: 4px 8px;">➔</button>
+        </div>
+
+        <!-- Ochiluvchi Panel menyusi (edited-image.png uslubida) -->
+        <div id="panel-dropdown" style="display: none; position: absolute; bottom: 100%; left: 0; width: 100%; background: #ffffff; border-radius: 12px; box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04); border: 1px solid #e2e8f0; margin-bottom: 8px; z-index: 999; overflow: hidden; padding: 6px;">
+    
+            <!-- Admin Panelga xavfsiz o'tish tugmasi -->
+            <button onclick="secureNavigate('http://localhost:8080/')" style="display: block; width: 100%; text-align: left; padding: 10px 14px; border-radius: 8px; color: #1e293b; background: transparent; border: none; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+            <div style="font-size: 13px; font-weight: 600; color: #0f172a;">Suhbat paneli</div>
+            </button>
+
+            <!-- Super Admin Panelga xavfsiz o'tish tugmasi -->
+            <button onclick="secureNavigate('http://localhost:8080/superadmin-panel')" style="display: block; width: 100%; text-align: left; padding: 10px 14px; border-radius: 8px; color: #1e293b; background: transparent; border: none; cursor: pointer; transition: background 0.2s; margin-top: 2px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+            <div style="font-size: 13px; font-weight: 600; color: #dc2626;">Super Admin Panel</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Boshqaruv tizimi</div>
+            </button>
+
+        </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div id="main">
+
+    <!-- TAB: CHATS -->
+    <div class="tab-panel active" id="tab-chats">
+      <div class="chats-layout">
+
+        <div class="sessions-pane">
+          <div class="pane-hdr">
+            <div>
+              <h3>Sessiyalar jadvali</h3>
+              <div class="pane-hdr-sub">Faol suhbatlar monitoringi</div>
+            </div>
+            <button class="btn-refresh" onclick="loadSessions()">↻ Yangilash</button>
+          </div>
+          <div class="stat-row">
+            <div class="stat-card"><div class="stat-label">Sessiyalar</div><div class="stat-val red" id="stat-total-sessions">0</div></div>
+            <div class="stat-card"><div class="stat-label">Xabarlar</div><div class="stat-val blue" id="stat-total-messages">0</div></div>
+          </div>
+          <div class="filter-row">
+            <input class="fi flex-1" type="text" id="search-id" oninput="filterTableData()" placeholder="Sessiya ID qidirish...">
+            <input class="fi" type="month" id="filter-date" onchange="filterTableData()">
+            <button class="btn-sm" onclick="clearFilters()">Tozalash</button>
+          </div>
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead><tr>
+                <th>Sessiya ID</th><th>Platforma</th><th>Boshlanishi</th><th>Oxirgi</th>
+                <th style="text-align:center">Xabarlar</th><th style="text-align:center">Holat</th><th style="text-align:center">Amallar</th>
+              </tr></thead>
+              <tbody id="session-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="chat-view-pane">
+          <div class="chat-view-hdr">
+            <h4 id="current-session">Sessiyani tanlang</h4>
+            <p>Xabarlar oqimi jurnali</p>
+          </div>
+          <div id="chat-history"><div class="ch-empty">Suhbat tarixini ko'rish uchun chap tomondagi ID ga bosing.</div></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB: QDRANT -->
+    <div class="tab-panel" id="tab-qdrant">
+      <div class="qdrant-wrap">
+
+        <div class="card">
+          <div class="card-hdr"><div class="card-hdr-icon">📤</div> Ma'lumot yuklash</div>
+          <div class="qdrant-grid">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div>
+                <label class="field-label">🌐 URL orqali to'ldirish</label>
+                <div style="display:flex;gap:8px">
+                  <input class="fi flex-1" type="text" id="scrape-url" placeholder="https://brb.uz/...">
+                  <button class="btn-refresh" id="btn-scrape" onclick="fetchFromUrl()" style="white-space:nowrap">Olish</button>
+                </div>
+                <div id="scrape-alert" class="upload-alert" style="margin-top:8px"></div>
+              </div>
+              <div>
+                <label class="field-label">Sarlavha</label>
+                <input class="fi" style="width:100%" type="text" id="qdrant-title" placeholder="Hujjat nomi...">
+              </div>
+              <div>
+                <label class="field-label">Matn</label>
+                <textarea class="textarea" id="qdrant-text" rows="6" placeholder="Matnni kiriting yoki URL dan oling..."></textarea>
+              </div>
+              <button class="btn-upload" onclick="addToQdrant()">💾 Bazaga saqlash</button>
+              <div id="qdrant-alert" class="qdrant-alert"></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <label class="field-label">📄 Fayldan yuklash</label>
+              <div class="upload-zone" id="drop-zone" ondragover="event.preventDefault();this.style.borderColor='var(--red)'" ondragleave="this.style.borderColor=''" ondrop="handleFileDrop(event)">
+                <div style="font-size:28px;margin-bottom:8px">📂</div>
+                <strong id="drop-label">Fayllarni shu yerga tashlang yoki bosing</strong>
+                <p style="margin-top:4px">.pdf, .docx — maks. 50MB</p>
+                <input type="file" id="file-input" accept=".pdf,.doc,.docx" multiple onchange="handleFileSelect(event)">
+              </div>
+              <div class="file-pill" id="file-info">
+                <span id="file-icon">📄</span>
+                <span id="file-name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+                <span id="file-size" style="color:var(--txt2);font-size:11px"></span>
+                <button onclick="clearFile()" style="color:#dc2626;background:none;border:none;cursor:pointer;font-size:14px;font-weight:700">✕</button>
+              </div>
+              <button class="btn-upload" id="btn-upload" onclick="uploadFile()" disabled>Fayllarni bazaga yozish</button>
+              <div id="upload-alert" class="upload-alert"></div>
+              <button class="btn-danger" onclick="deleteAllQdrantData()">🗑️ Bazani to'liq tozalash</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="pane-hdr" style="padding:14px 18px">
+            <div>
+              <h3>Qdrantdagi hujjatlar</h3>
+              <div class="pane-hdr-sub">Indekslangan ma'lumotlar ro'yxati</div>
+            </div>
+            <button class="btn-refresh" onclick="loadQdrantData()">↻ Yangilash</button>
+          </div>
+          <div class="tbl-wrap" style="max-height:380px">
+            <table class="tbl">
+              <thead><tr>
+                <th>Manba</th><th>Sarlavha</th><th>Matn parchasi</th>
+                <th style="text-align:center">Holat</th><th style="text-align:center">Amal</th>
+              </tr></thead>
+              <tbody id="qdrant-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <h3>To'liq matn</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-content"></div>
+    <div class="modal-footer">
+      <button class="btn-primary" style="width:auto;padding:8px 20px" onclick="closeModal()">Yopish</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let allSessionsCached=[], qdrantFullData=[], selectedFiles=[];
+  let inactivityTimer;
+
+  // ── AUTH ──
+  async function checkAuth(){
+    try{
+      const r=await fetch('/admin/me');
+      if(r.ok){const d=await r.json();document.getElementById('current-username').textContent=d.username;showApp()}
+      else showLogin();
+    }catch(e){showLogin()}
+  }
+  function resetInactivity(){
+    clearTimeout(inactivityTimer);
+    if(!document.getElementById('app').classList.contains('visible')) return;
+    inactivityTimer=setTimeout(()=>{alert('⚠️ 15 daqiqa harakatsizlik — tizimdan chiqildi.');logoutAdmin()},15*60*1000);
+  }
+  ['mousemove','keypress','click','scroll'].forEach(e=>document.addEventListener(e,resetInactivity));
+
+  async function loginAdmin(){
+    const u=document.getElementById('login-username').value.trim();
+    const p=document.getElementById('login-password').value;
+    const al=document.getElementById('login-alert');
+    if(!u||!p){showAlert(al,"Barcha maydonlarni to'ldiring!");return}
+    try{
+      const r=await fetch('/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+      if(r.ok){const d=await r.json();document.getElementById('current-username').textContent=d.username;al.style.display='none';showApp()}
+      else{const e=await r.json();showAlert(al,e.detail||"Login yoki parol xato!")}
+    }catch(e){showAlert(al,"Server bilan aloqa yo'q!")}
+  }
+  async function logoutAdmin(){await fetch('/admin/logout',{method:'POST'});showLogin()}
+  function showAlert(el,msg){el.textContent=msg;el.style.display='block'}
+  function showLogin(){
+    document.getElementById('login-screen').style.display='flex';
+    document.getElementById('app').classList.remove('visible');
+    document.getElementById('login-password').value='';
+  }
+  function showApp(){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').classList.add('visible');
+    resetInactivity();
+    loadSessions();
+  }
+
+  function togglePanelMenu() {
+    const dropdown = document.getElementById('panel-dropdown');
+    if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+        dropdown.style.display = 'block';
+    } else {
+        dropdown.style.display = 'none';
+    }
+    }
+
+  // XAVFSIZLIK: Boshqa oynaga o'tishda joriy panelni qulflash funksiyasi
+  function secureNavigate(targetUrl) {
+    // 1. Vizual qulflash: Dashboardni yashirib, login oynasini ochish
+    const dashboardScreen = document.getElementById('dashboard-screen');
+    const loginScreen = document.getElementById('login-screen');
+  
+    if (dashboardScreen && loginScreen) {
+        dashboardScreen.classList.add('hidden');
+        loginScreen.classList.remove('hidden');
+    }
+
+    // 2. Seans ma'lumotlarini tozalash (Sizdagi logout funksiyalarini chaqiramiz)
+    if (typeof logoutAdmin === 'function') {
+        logoutAdmin();
+    } else if (typeof logoutSuperAdmin === 'function') {
+        logoutSuperAdmin();
+    }
+
+    // Local va Session storage xavfsizligi
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // 3. Yo'naltirish (Kichik kechikish vizual qulflash effekti to'liq ishlashi uchun)
+    setTimeout(() => {
+        window.location.href = targetUrl;
+    }, 150);
+    }
+
+
+  // ── TABS ──
+  function switchTab(name){
+    ['chats','qdrant'].forEach(n=>{
+      document.getElementById('tab-'+n).classList.remove('active');
+      document.getElementById('btn-'+n).classList.remove('active');
+    });
+    document.getElementById('tab-'+name).classList.add('active');
+    document.getElementById('btn-'+name).classList.add('active');
+    if(name==='chats')loadSessions();
+    if(name==='qdrant')loadQdrantData();
+  }
+
+  // ── SESSIONS ──
+  async function loadSessions(){
+    try{const r=await fetch('/admin/sessions');const d=await r.json();allSessionsCached=d.active_sessions||[];filterTableData()}
+    catch(e){console.warn(e)}
+  }
+  function filterTableData(){
+    const sv=document.getElementById('search-id').value.toLowerCase();
+    const dv=document.getElementById('filter-date').value;
+
+    // Oy filtri: messages_by_month da tanlangan oy bor bo'lsa sessiyani ko'rsat
+    const filtered=allSessionsCached.filter(s=>{
+      const id=s.session_id.split('-').pop().toLowerCase();
+      const full=s.session_id.toLowerCase();
+      const ms=id.includes(sv)||full.includes(sv);
+      let md=true;
+      if(dv){
+        // messages_by_month mavjud bo'lsa — o'shadan tekshiramiz (aniq)
+        if(s.messages_by_month && Object.keys(s.messages_by_month).length){
+          md=dv in s.messages_by_month;
+        } else {
+          // Eski backend — created_at yoki updated_at bo'yicha
+          md=(s.created_at&&s.created_at.substring(0,7)===dv)||(s.updated_at&&s.updated_at.substring(0,7)===dv);
+        }
+      }
+      return ms&&md;
+    });
+
+    const tbody=document.getElementById('session-table-body');
+    tbody.innerHTML='';
+    document.getElementById('stat-total-sessions').textContent=filtered.length;
+    let total=0;
+    if(!filtered.length){
+      tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--txt3);font-style:italic">Suhbatlar topilmadi</td></tr>';
+      document.getElementById('stat-total-messages').textContent=0;
+      return;
+    }
+    filtered.forEach(s=>{
+      const sid=s.session_id.split('-').pop();
+      const paused=s.is_paused;
+
+      // Oy filtri tanlangan bo'lsa — faqat o'sha oydagi xabar sonini ko'rsat
+      let mc;
+      if(dv && s.messages_by_month && dv in s.messages_by_month){
+        mc=s.messages_by_month[dv];
+      } else {
+        mc=s.messages_count||0;
+      }
+      total+=mc;
+
+      // Oylar bo'yicha mini statistika (tooltip uchun)
+      let monthsInfo='';
+      if(s.messages_by_month && Object.keys(s.messages_by_month).length){
+        monthsInfo=Object.entries(s.messages_by_month)
+          .sort((a,b)=>a[0].localeCompare(b[0]))
+          .map(([m,c])=>`${m}: ${c} ta`)
+          .join(' | ');
+      }
+
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td onclick="loadChatHistory('${s.session_id}')" style="cursor:pointer"><span class="link-id">…${sid}</span></td>
+        <td><span class="badge badge-web">🌐 WEB</span></td>
+        <td style="color:var(--txt2);font-size:11px;white-space:nowrap">${s.created_at}</td>
+        <td style="color:var(--txt2);font-size:11px;white-space:nowrap">${s.updated_at}</td>
+        <td style="text-align:center;font-weight:700" title="${monthsInfo}">
+          ${mc}
+          ${dv&&s.messages_by_month&&Object.keys(s.messages_by_month).length>1?'<div style="font-size:9px;color:var(--txt3);font-weight:400">'+dv+' oyi</div>':''}
+        </td>
+        <td style="text-align:center"><span class="badge ${paused?'badge-amber':'badge-green'}">${paused?'⏸ Pauza':'● Faol'}</span></td>
+        <td style="text-align:center;white-space:nowrap" onclick="event.stopPropagation()">
+          <button class="btn-tbl btn-pause" onclick="togglePauseSession('${s.session_id}')">${paused?'▶ Yoq':'⏸ Pauza'}</button>
+          <button class="btn-tbl btn-del" onclick="deleteSessionFromDb('${s.session_id}')" style="margin-left:4px">🗑</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+    document.getElementById('stat-total-messages').textContent=total;
+  }
+  function clearFilters(){document.getElementById('search-id').value='';document.getElementById('filter-date').value='';filterTableData()}
+  async function togglePauseSession(id){
+    if(!confirm("Sessiya holatini o'zgartirmoqchimisiz?"))return;
+    const r=await fetch('/admin/sessions/'+id+'/toggle-pause',{method:'PUT'});
+    if(r.ok)loadSessions(); else alert("Xatolik yuz berdi.");
+  }
+  async function deleteSessionFromDb(id){
+    if(!confirm("⚠️ Ushbu suhbatni o'chirasizmi?"))return;
+    const r=await fetch('/admin/sessions/'+id,{method:'DELETE'});
+    if(r.ok){loadSessions();document.getElementById('chat-history').innerHTML='<div class="ch-empty">ID tanlang</div>'}
+    else alert("Xatolik yuz berdi.");
+  }
+  async function loadChatHistory(id){
+    document.getElementById('current-session').textContent='Sessiya: …'+id.split('-').pop();
+    const r=await fetch('/admin/sessions/'+id);const d=await r.json();
+    const div=document.getElementById('chat-history');div.innerHTML='';
+    if(!d.chat_history||!d.chat_history.length){div.innerHTML='<div class="ch-empty">Xabarlar topilmadi</div>';return}
+    d.chat_history.forEach(m=>{
+      const b=document.createElement('div');
+      const isU=m.sender==='user';
+      b.className='ch-msg '+(isU?'usr':'bot');
+      const t=m.time?'<span style="font-size:10px;opacity:.5;margin-left:6px">'+m.time.substring(11,16)+'</span>':'';
+      b.innerHTML='<div class="ch-role">'+(isU?'Mijoz':'Bot')+t+'</div>'+escHtml(m.text);
+      div.appendChild(b);
+    });
+    div.scrollTop=div.scrollHeight;
+  }
+
+  // ── QDRANT ──
+  async function fetchFromUrl(){
+    const u=document.getElementById('scrape-url').value.trim();
+    const al=document.getElementById('scrape-alert');
+    if(!u){showQAlert(al,'URL kiriting!','ua-red');return}
+    showQAlert(al,'Sayt o\'qilmoqda...','ua-blue');
+    const btn=document.getElementById('btn-scrape');btn.disabled=true;btn.textContent='Kuting...';
+    try{
+      const r=await fetch('/admin/scrape',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:u})});
+      const d=await r.json();
+      if(r.ok){document.getElementById('qdrant-text').value=d.text;if(d.title)document.getElementById('qdrant-title').value=d.title;showQAlert(al,'Muvaffaqiyatli olindi!','ua-green')}
+      else showQAlert(al,'Xatolik: '+(d.detail||''),'ua-red');
+    }catch(e){showQAlert(al,"Server bilan aloqa yo'q!",'ua-red')}
+    finally{btn.disabled=false;btn.textContent='Olish'}
+  }
+  async function addToQdrant(){
+    const url=document.getElementById('scrape-url').value;
+    const title=document.getElementById('qdrant-title').value;
+    const text=document.getElementById('qdrant-text').value.trim();
+    const al=document.getElementById('qdrant-alert');
+    if(!text){showQAlert(al,'Matn bo\'sh!','qa-red');return}
+    showQAlert(al,'Saqlanmoqda...','qa-blue');
+    try{
+      const r=await fetch('/admin/qdrant/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,content:text,url})});
+      const d=await r.json();
+      if(r.ok){showQAlert(al,'Muvaffaqiyatli saqlandi! ✅','qa-green');document.getElementById('qdrant-text').value='';loadQdrantData()}
+      else showQAlert(al,'Xatolik: '+(d.detail||''),'qa-red');
+    }catch(e){showQAlert(al,"Server xatosi!",'qa-red')}
+  }
+  function showQAlert(el,msg,cls){el.textContent=msg;el.className='qdrant-alert show '+cls}
+
+  // File upload
+  function handleFileSelect(e){setFiles(e.target.files)}
+  function handleFileDrop(e){e.preventDefault();document.getElementById('drop-zone').style.borderColor='';if(e.dataTransfer.files.length)setFiles(e.dataTransfer.files)}
+  function setFiles(list){
+    const allowed=['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    selectedFiles=[];let sz=0;
+    for(let i=0;i<list.length;i++){
+      const f=list[i];
+      if(!allowed.includes(f.type)&&!f.name.match(/\.(pdf|doc|docx)$/i)){showUploadAlert('Format xato: '+f.name,'ua-red');return}
+      sz+=f.size;selectedFiles.push(f);
+    }
+    if(sz>50*1024*1024){showUploadAlert('50MB dan oshmasin!','ua-red');selectedFiles=[];return}
+    document.getElementById('file-icon').textContent='📄';
+    document.getElementById('file-name').textContent=selectedFiles.length>1?selectedFiles.length+' ta fayl':selectedFiles[0].name;
+    document.getElementById('file-size').textContent=(sz/1024/1024).toFixed(2)+' MB';
+    document.getElementById('file-info').classList.add('show');
+    document.getElementById('drop-label').textContent='Fayllar tanlandi';
+    document.getElementById('btn-upload').disabled=false;
+  }
+  function clearFile(){
+    selectedFiles=[];document.getElementById('file-input').value='';
+    document.getElementById('file-info').classList.remove('show');
+    document.getElementById('drop-label').textContent='Fayllarni shu yerga tashlang yoki bosing';
+    document.getElementById('btn-upload').disabled=true;
+    const al=document.getElementById('upload-alert');al.className='upload-alert';
+  }
+  async function uploadFile(){
+    if(!selectedFiles.length)return;
+    const btn=document.getElementById('btn-upload');btn.disabled=true;btn.textContent='Yuklanmoqda...';
+    showUploadAlert(selectedFiles.length+' ta fayl yuklanmoqda...','ua-blue');
+    try{
+      const fd=new FormData();
+      selectedFiles.forEach(f=>fd.append('files',f));
+      const r=await fetch('/admin/upload-file',{method:'POST',body:fd});
+      const d=await r.json();
+      if(r.ok){showUploadAlert(d.message||'Muvaffaqiyatli saqlandi!','ua-green');clearFile();loadQdrantData()}
+      else{showUploadAlert('Xatolik: '+(d.detail||''),'ua-red');btn.disabled=false}
+    }catch(e){showUploadAlert("Server xatosi!",'ua-red');btn.disabled=false}
+    finally{btn.textContent='Fayllarni bazaga yozish'}
+  }
+  function showUploadAlert(msg,cls){const el=document.getElementById('upload-alert');el.textContent=msg;el.className='upload-alert show '+cls}
+
+  async function deleteAllQdrantData(){
+    if(!confirm('⚠️ BARCHA ma\'lumotlar o\'chadi. Tasdiqlaysizmi?'))return;
+    const r=await fetch('/admin/qdrant/delete-all',{method:'DELETE'});
+    const d=await r.json();
+    if(r.ok){alert('✅ '+d.message);loadQdrantData()}else alert('❌ Xatolik: '+(d.detail||''));
+  }
+
+  async function loadQdrantData(){
+    try{
+      const r=await fetch('/admin/qdrant/list');const result=await r.json();
+      if(!r.ok)return;
+      qdrantFullData=result.data||[];
+      const tbody=document.getElementById('qdrant-table-body');tbody.innerHTML='';
+      if(!qdrantFullData.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--txt3);font-style:italic">Bazaga hali hech narsa qo\'shilmagan</td></tr>';return}
+      qdrantFullData.forEach(item=>{
+        const tr=document.createElement('tr');
+        const sc=item.holat==='Yangi'?'badge-green':item.holat==="O'zgargan"?'badge-amber':'';
+        const urlD=String(item.url).startsWith('http')?`<a href="${item.url}" target="_blank" style="color:var(--red);font-size:11px">${item.url.substring(0,30)}…</a>`:`<span style="color:var(--txt2);font-size:11px">${item.url||'Fayl'}</span>`;
+        tr.innerHTML=`
+          <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${urlD}</td>
+          <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;font-size:12px;font-weight:500" title="${item.title}">${item.title}</td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:var(--txt2);cursor:pointer" onclick="showModal('${item.id}')" title="To'liq ko'rish">${item.matn_parchasi}</td>
+          <td style="text-align:center"><span class="badge ${sc}" style="font-size:10px">${item.holat}</span><div style="font-size:10px;color:var(--txt3);margin-top:2px">👤 ${item.admin}</div></td>
+          <td style="text-align:center"><button class="btn-tbl btn-del" onclick="deleteQdrantItem('${item.id}')">🗑 O'chirish</button></td>`;
+        tbody.appendChild(tr);
+      });
+    }catch(e){console.warn(e)}
+  }
+  function showModal(id){
+    const item=qdrantFullData.find(x=>String(x.id)===String(id));
+    if(!item)return;
+    document.getElementById('modal-content').textContent=item.toliq_matn;
+    document.getElementById('modal').classList.add('show');
+  }
+  function closeModal(){document.getElementById('modal').classList.remove('show')}
+  async function deleteQdrantItem(id){
+    if(!confirm('O\'chirib tashlamoqchimisiz?'))return;
+    const r=await fetch('/admin/qdrant/delete',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+    const d=await r.json();
+    if(r.ok)loadQdrantData(); else alert('❌ '+d.detail);
+  }
+  function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
+
+  checkAuth();
+  
+</script>
+</body>
+</html>

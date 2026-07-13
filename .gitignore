@@ -1,0 +1,14 @@
+
+.env
+*.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+vllm_env/
+postgres/
+qdrant/
+postgres_data/
+qdrant_data/
+.docker/
+

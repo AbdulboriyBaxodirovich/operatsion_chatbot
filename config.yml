@@ -1,0 +1,15 @@
+vllm:
+  url: "http://vllm:8000/v1/chat/completions"
+  model: "/model"
+  temperature: 0.2
+  max_tokens: 1024
+
+qdrant:
+  host: "http://qdrant:6333"
+  collection: "brb_knowledge"
+
+embedding:
+  model: "intfloat/multilingual-e5-large-instruct"
+
+app:
+  title: "BRB Bank Chatbot"
