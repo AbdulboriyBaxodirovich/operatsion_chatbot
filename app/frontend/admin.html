@@ -391,7 +391,7 @@
   // ── AUTH ──
   async function checkAuth(){
     try{
-      const r=await fetch(`${API_URL}/admin/me`);
+      const r=await fetch(`${API_URL}/admin/me`, { credentials: 'include' });
       if(r.ok){const d=await r.json();document.getElementById('current-username').textContent=d.username;showApp()}
       else showLogin();
     }catch(e){showLogin()}
@@ -409,12 +409,12 @@
     const al=document.getElementById('login-alert');
     if(!u||!p){showAlert(al,"Barcha maydonlarni to'ldiring!");return}
     try{
-      const r=await fetch(`${API_URL}/admin/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+      const r=await fetch(`${API_URL}/admin/login`, { credentials: 'include',method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
       if(r.ok){const d=await r.json();document.getElementById('current-username').textContent=d.username;al.style.display='none';showApp()}
       else{const e=await r.json();showAlert(al,e.detail||"Login yoki parol xato!")}
     }catch(e){showAlert(al,"Server bilan aloqa yo'q!")}
   }
-  async function logoutAdmin(){await fetch(`${API_URL}/admin/logout`,{method:'POST'});showLogin()}
+  async function logoutAdmin(){await fetch(`${API_URL}/admin/logout`, { credentials: 'include',method:'POST'});showLogin()}
   function showAlert(el,msg){el.textContent=msg;el.style.display='block'}
   function showLogin(){
     document.getElementById('login-screen').style.display='flex';
@@ -479,7 +479,7 @@
 
   // ── SESSIONS ──
   async function loadSessions(){
-    try{const r=await fetch(`${API_URL}/admin/sessions`);const d=await r.json();allSessionsCached=d.active_sessions||[];filterTableData()}
+    try{const r=await fetch(`${API_URL}/admin/sessions`, { credentials: 'include' });const d=await r.json();allSessionsCached=d.active_sessions||[];filterTableData()}
     catch(e){console.warn(e)}
   }
   function filterTableData(){
@@ -553,18 +553,18 @@
   function clearFilters(){document.getElementById('search-id').value='';document.getElementById('filter-date').value='';filterTableData()}
   async function togglePauseSession(id){
     if(!confirm("Sessiya holatini o'zgartirmoqchimisiz?"))return;
-    const r=await fetch(`${API_URL}/admin/sessions/${id}/toggle-pause`,{method:'PUT'});
+    const r=await fetch(`${API_URL}/admin/sessions/${id}/toggle-pause`, { credentials: 'include',method:'PUT'});
     if(r.ok)loadSessions(); else alert("Xatolik yuz berdi.");
   }
   async function deleteSessionFromDb(id){
     if(!confirm("⚠️ Ushbu suhbatni o'chirasizmi?"))return;
-    const r=await fetch(`${API_URL}/admin/sessions/${id}`,{method:'DELETE'});
+    const r=await fetch(`${API_URL}/admin/sessions/${id}`, { credentials: 'include',method:'DELETE'});
     if(r.ok){loadSessions();document.getElementById('chat-history').innerHTML='<div class="ch-empty">ID tanlang</div>'}
     else alert("Xatolik yuz berdi.");
   }
   async function loadChatHistory(id){
     document.getElementById('current-session').textContent='Sessiya: …'+id.split('-').pop();
-    const r=await fetch(`${API_URL}/admin/sessions/${id}`);const d=await r.json();
+    const r=await fetch(`${API_URL}/admin/sessions/${id}`, { credentials: 'include' });const d=await r.json();
     const div=document.getElementById('chat-history');div.innerHTML='';
     if(!d.chat_history||!d.chat_history.length){div.innerHTML='<div class="ch-empty">Xabarlar topilmadi</div>';return}
     d.chat_history.forEach(m=>{
@@ -586,7 +586,7 @@
     showQAlert(al,'Sayt o\'qilmoqda...','ua-blue');
     const btn=document.getElementById('btn-scrape');btn.disabled=true;btn.textContent='Kuting...';
     try{
-      const r=await fetch(`${API_URL}/admin/scrape`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:u})});
+      const r=await fetch(`${API_URL}/admin/scrape`, { credentials: 'include',method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:u})});
       const d=await r.json();
       if(r.ok){document.getElementById('qdrant-text').value=d.text;if(d.title)document.getElementById('qdrant-title').value=d.title;showQAlert(al,'Muvaffaqiyatli olindi!','ua-green')}
       else showQAlert(al,'Xatolik: '+(d.detail||''),'ua-red');
@@ -601,7 +601,7 @@
     if(!text){showQAlert(al,'Matn bo\'sh!','qa-red');return}
     showQAlert(al,'Saqlanmoqda...','qa-blue');
     try{
-      const r=await fetch(`${API_URL}/admin/qdrant/add`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,content:text,url})});
+      const r=await fetch(`${API_URL}/admin/qdrant/add`, { credentials: 'include',method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,content:text,url})});
       const d=await r.json();
       if(r.ok){showQAlert(al,'Muvaffaqiyatli saqlandi! ✅','qa-green');document.getElementById('qdrant-text').value='';loadQdrantData()}
       else showQAlert(al,'Xatolik: '+(d.detail||''),'qa-red');
@@ -642,7 +642,7 @@
     try{
       const fd=new FormData();
       selectedFiles.forEach(f=>fd.append('files',f));
-      const r=await fetch(`${API_URL}/admin/upload-file`,{method:'POST',body:fd});
+      const r=await fetch(`${API_URL}/admin/upload-file`, { credentials: 'include',method:'POST',body:fd});
       const d=await r.json();
       if(r.ok){showUploadAlert(d.message||'Muvaffaqiyatli saqlandi!','ua-green');clearFile();loadQdrantData()}
       else{showUploadAlert('Xatolik: '+(d.detail||''),'ua-red');btn.disabled=false}
@@ -653,14 +653,14 @@
 
   async function deleteAllQdrantData(){
     if(!confirm('⚠️ BARCHA ma\'lumotlar o\'chadi. Tasdiqlaysizmi?'))return;
-    const r=await fetch(`${API_URL}/admin/qdrant/delete-all`,{method:'DELETE'});
+    const r=await fetch(`${API_URL}/admin/qdrant/delete-all`, { credentials: 'include',method:'DELETE'});
     const d=await r.json();
     if(r.ok){alert('✅ '+d.message);loadQdrantData()}else alert('❌ Xatolik: '+(d.detail||''));
   }
 
   async function loadQdrantData(){
     try{
-      const r=await fetch(`${API_URL}/admin/qdrant/list`);const result=await r.json();
+      const r=await fetch(`${API_URL}/admin/qdrant/list`, { credentials: 'include' });const result=await r.json();
       if(!r.ok)return;
       qdrantFullData=result.data||[];
       const tbody=document.getElementById('qdrant-table-body');tbody.innerHTML='';
@@ -688,7 +688,7 @@
   function closeModal(){document.getElementById('modal').classList.remove('show')}
   async function deleteQdrantItem(id){
     if(!confirm('O\'chirib tashlamoqchimisiz?'))return;
-    const r=await fetch(`${API_URL}/admin/qdrant/delete`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+    const r=await fetch(`${API_URL}/admin/qdrant/delete`, { credentials: 'include',method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
     const d=await r.json();
     if(r.ok)loadQdrantData(); else alert('❌ '+d.detail);
   }

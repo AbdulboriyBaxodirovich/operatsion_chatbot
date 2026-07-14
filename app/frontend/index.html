@@ -711,7 +711,7 @@
   async function loadProcesses() {
     try {
       // API_URL o'zgaruvchisi qo'shildi
-      const r = await fetch(`${API_URL}/chat/processes?limit=100`);
+      const r = await fetch(`${API_URL}/chat/processes?limit=100`, { credentials: 'include' });
       const d = await r.json();
       if (Array.isArray(d)) {
         _all = d; PROCS = {};
@@ -827,7 +827,7 @@
     setBusy(true);
     try {
       // API_URL o'zgaruvchisi qo'shildi
-      const r = await fetch(`${API_URL}/chat/`, {
+      const r = await fetch(`${API_URL}/chat/`, { credentials: 'include',
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text })
@@ -867,7 +867,7 @@
     }
     try {
       // API_URL o'zgaruvchisi qo'shildi
-      const r = await fetch(`${API_URL}/chat/chat-history`);
+      const r = await fetch(`${API_URL}/chat/chat-history`, { credentials: 'include' });
       const d = await r.json();
       if (d.status === 'success' && d.chat_history.length > 0) {
         clearMsgs();

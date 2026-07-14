@@ -36,9 +36,10 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command: uvicorn backend.main:app --host 0.0.0.0 --port 8080 --reload
-    # .env faylini to'g'ridan-to'g'ri konteyner ichiga o'tkazib yuborish:
     env_file:
       - .env
+    environment:
+      - ENV=production
     depends_on:
       - postgres
       - qdrant
