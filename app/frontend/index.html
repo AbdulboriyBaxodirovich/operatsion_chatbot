@@ -654,6 +654,10 @@
 </div>
 
 <script>
+  /* ===================== BACKEND MANZILI (API_URL) ===================== */
+  // Sizning faol Cloudflare tunnel manzilingiz
+  const API_URL = "https://additions-pages-diego-accurately.trycloudflare.com";
+
   /* ===================== HOLAT (STATE) ===================== */
   let PROCS = {}, _all = [], activeProc = null, currentStep = null, _hopen = false, _busy = false;
   const cb  = document.getElementById('chat-box');
@@ -706,7 +710,8 @@
   /* ===================== JARAYONLARNI YUKLASH (API) ===================== */
   async function loadProcesses() {
     try {
-      const r = await fetch('/chat/processes?limit=100');
+      // API_URL o'zgaruvchisi qo'shildi
+      const r = await fetch(`${API_URL}/chat/processes?limit=100`);
       const d = await r.json();
       if (Array.isArray(d)) {
         _all = d; PROCS = {};
@@ -795,7 +800,6 @@
 
   /* ===================== INPUT ===================== */
   function handleKey(e) {
-    // CJK IME kompozitsiyasini hisobga olamiz
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent?.isComposing && e.keyCode !== 229) {
       e.preventDefault();
       sendMessage();
@@ -822,7 +826,8 @@
   async function toBack(text, tid) {
     setBusy(true);
     try {
-      const r = await fetch('/chat/', {
+      // API_URL o'zgaruvchisi qo'shildi
+      const r = await fetch(`${API_URL}/chat/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text })
@@ -861,7 +866,8 @@
       return;
     }
     try {
-      const r = await fetch('/chat/chat-history');
+      // API_URL o'zgaruvchisi qo'shildi
+      const r = await fetch(`${API_URL}/chat/chat-history`);
       const d = await r.json();
       if (d.status === 'success' && d.chat_history.length > 0) {
         clearMsgs();
@@ -960,17 +966,13 @@
       .replace(/\n/g, '<br>');
   }
 
-  // Bot javobi uchun yengil markdown formati (xavfsiz — avval escape qilinadi)
   function fmt(s) {
     let out = String(s)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
-    // **qalin**
     out = out.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    // `kod`
     out = out.replace(/`([^`]+?)`/g, '<code>$1</code>');
-    // qatorlar
     out = out.replace(/\n/g, '<br>');
     return out;
   }
@@ -1012,7 +1014,8 @@
       return;
     }
     const safeFileName = encodeURIComponent(currentDiagramFile);
-    img.src = `/chat/diagram-file/${safeFileName}`;
+    // API_URL o'zgaruvchisi qo'shildi
+    img.src = `${API_URL}/chat/diagram-file/${safeFileName}`;
     resetDiagramZoom();
     modal.style.display = 'flex';
   }

@@ -477,6 +477,7 @@
 
     <script>
         // Global massiv kesh ma'lumoti uchun
+        const API_URL = "https://additions-pages-diego-accurately.trycloudflare.com";
         let allSessionsCached = [];
 
         // =======================================
@@ -484,7 +485,8 @@
         // =======================================
         async function checkAuth() {
             try {
-                const res = await fetch('/superadmin/me');
+                // Tuzatildi: yakka tirnoq o'rniga bektek qo'yildi
+                const res = await fetch(`${API_URL}/superadmin/me`);
                 if (res.ok) {
                     const data = await res.json();
                     document.getElementById('current-username').innerText = data.username;
@@ -538,7 +540,8 @@
             }
 
             try {
-                const res = await fetch('/superadmin/login', {
+                // Tuzatildi: bektek qo'yildi
+                const res = await fetch(`${API_URL}/superadmin/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: user, password: pass })
@@ -562,7 +565,8 @@
         }
 
         async function logoutSuperAdmin() {
-            await fetch('/superadmin/logout', { method: 'POST' });
+            // Tuzatildi: bektek qo'yildi
+            await fetch(`${API_URL}/superadmin/logout`, { method: 'POST' });
             showLogin();
         }
 
@@ -588,7 +592,8 @@
             }
 
             try {
-                const res = await fetch('/superadmin/settings/update', {
+                // Tuzatildi: bektek qo'yildi
+                const res = await fetch(`${API_URL}/superadmin/settings/update`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ new_username: newUser, new_password: newPass })
@@ -661,7 +666,7 @@
             switchTab('chats');
         }
 
-        // --- Tablarni almashtirish (Zamonaviy dizayn renderi bilan) ---
+        // --- Tablarni almashtirish ---
         function switchTab(tabName) {
             ['chats', 'qdrant', 'admins', 'logs', 'settings'].forEach(name => {
                 document.getElementById(`tab-${name}`).classList.add('hidden');
@@ -681,8 +686,8 @@
         // ── SUPER ADMIN SESSIONS ──
         async function loadSessions() {
             try {
-                // Superadmin endpointi xavfsiz saqlandi
-                const res = await fetch('/superadmin/sessions');
+                // Tuzatildi: bektek qo'yildi
+                const res = await fetch(`${API_URL}/superadmin/sessions`);
                 const data = await res.json();
                 allSessionsCached = data.active_sessions || [];
                 filterTableData();
@@ -697,7 +702,6 @@
             const tbody = document.getElementById('session-table-body');
             tbody.innerHTML = '';
 
-            // 1. Ma'lumotlarni oylar bo'yicha to'g'ri filtrlash
             const filteredData = allSessionsCached.filter(session => {
                 const shortId = session.session_id.split('-').pop().toLowerCase();
                 const fullId = session.session_id.toLowerCase();
@@ -705,13 +709,11 @@
 
                 let matchesDate = true;
                 if (dateVal) {
-                    // Yangi backend (messages_by_month) mavjud bo'lsa
                     if (session.messages_by_month && Object.keys(session.messages_by_month).length) {
                         matchesDate = dateVal in session.messages_by_month;
                     } else {
-                        // Eski backend — created_at yoki updated_at bo'yicha fallback
                         matchesDate = (session.created_at && session.created_at.substring(0, 7) === dateVal) || 
-                              (session.updated_at && session.updated_at.substring(0, 7) === dateVal);
+                                      (session.updated_at && session.updated_at.substring(0, 7) === dateVal);
                     }
                 }
                 return matchesSearch && matchesDate;
@@ -720,19 +722,15 @@
             let totalMessagesSum = 0;
             document.getElementById('stat-total-sessions').textContent = filteredData.length;
 
-            // Agar filtr natijasida hech narsa topilmasa
             if (filteredData.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 italic bg-white">Hech qanday faol suhbatlar topilmadi</td></tr>`;
                 document.getElementById('stat-total-messages').textContent = 0;
                 return;
             }
 
-            // 2. Ma'lumotlarni aynan sizning jadvalingiz strukturasi bo'yicha render qilish
             filteredData.forEach(session => {
                 const tr = document.createElement('tr');
                 tr.className = "border-b border-slate-100 hover:bg-slate-50/80 transition duration-150 cursor-pointer";
-        
-                // Qatordan biror joy bosilsa (tugmalardan tashqari), chat tarixini yuklaydi
                 tr.setAttribute('onclick', `loadChatHistory('${session.session_id}')`);
 
                 const shortId = session.session_id.split('-').pop(); 
@@ -740,7 +738,6 @@
                 const statusClass = session.is_paused ? "bg-amber-50 border border-amber-200 text-amber-700" : "bg-emerald-50 border border-emerald-200 text-emerald-700";
                 const btnPauseText = session.is_paused ? "▶️ Yoqish" : "⏸️ Pauza";
 
-                // Oy filtri tanlangan bo'lsa — faqat o'sha oydagi xabarlar sonini, aks holda umumiy xabarlar sonini hisoblaydi
                 let msgCount;
                 if (dateVal && session.messages_by_month && dateVal in session.messages_by_month) {
                     msgCount = session.messages_by_month[dateVal];
@@ -750,7 +747,6 @@
         
                 totalMessagesSum += msgCount;
 
-                // Oylar bo'yicha mini statistika (Xabarlar soni ustuniga "title" sifatida biriktiriladi)
                 let monthsInfo = '';
                 if (session.messages_by_month && Object.keys(session.messages_by_month).length) {
                     monthsInfo = Object.entries(session.messages_by_month)
@@ -763,7 +759,6 @@
                     ? `<span class="px-2 py-1 rounded-md bg-blue-50 border border-blue-100 text-blue-700 font-bold text-[10px]">🌐 WEB SYSTEM</span>`
                     : `<span class="px-2 py-1 rounded-md bg-sky-50 border border-sky-100 text-sky-700 font-bold text-[10px]">🔹 TG BOT</span>`;
 
-                // Jadvalning asl dizayni saqlab qolindi
                 tr.innerHTML = `
                     <td class="p-4 font-semibold text-indigo-600 hover:underline" title="Tarixni ochish">
                         id: ${shortId}
@@ -789,7 +784,6 @@
                 tbody.appendChild(tr);
             });
 
-            // Jami filtrlangan xabarlar sonini hisoblagichga yozamiz
             document.getElementById('stat-total-messages').textContent = totalMessagesSum;
         }
 
@@ -802,7 +796,7 @@
         async function togglePauseSession(sessionId) {
             if(!confirm("Sessiya holatini o'zgartirmoqchimisiz?")) return;
             try {
-                const res = await fetch(`/superadmin/sessions/${sessionId}/toggle-pause`, { method: 'PUT' });
+                const res = await fetch(`${API_URL}/superadmin/sessions/${sessionId}/toggle-pause`, { method: 'PUT' });
                 if(res.ok) {
                     loadSessions();
                 } else {
@@ -816,7 +810,7 @@
         async function deleteSessionFromDb(sessionId) {
             if(!confirm("⚠️ DIQQAT! Tizim bosh boshqaruvchisi sifatida ushbu suhbatni va uning barcha xabarlarini bazadan butunlay o'chirasizmi?")) return;
             try {
-                const res = await fetch(`/superadmin/sessions/${sessionId}`, { method: 'DELETE' });
+                const res = await fetch(`${API_URL}/superadmin/sessions/${sessionId}`, { method: 'DELETE' });
                 if(res.ok) {
                     alert("Sessiya muvaffaqiyatli o'chirildi.");
                     loadSessions();
@@ -832,7 +826,7 @@
 
         async function loadChatHistory(session_id) {
             document.getElementById('current-session').textContent = "Sessiya ID: " + session_id;
-            const res = await fetch(`/superadmin/sessions/${session_id}`);
+            const res = await fetch(`${API_URL}/superadmin/sessions/${session_id}`);
             const data = await res.json();
             const historyDiv = document.getElementById('chat-history');
             historyDiv.innerHTML = '';
@@ -848,7 +842,6 @@
                 div.innerHTML = `<div class="text-[10px] font-bold mb-1 uppercase tracking-wider ${metaColor}">${isUser ? 'Mijoz' : 'Bot AI'}</div><p class="leading-relaxed whitespace-pre-wrap">${msg.text}</p>`;
                 historyDiv.appendChild(div);
             });
-            // Avtomatik quyiga skroll qilish
             historyDiv.scrollTop = historyDiv.scrollHeight;
         }
 
@@ -859,7 +852,7 @@
             const url = document.getElementById('scrape-url').value;
             if(!url) return alert("URL kiriting!");
             document.getElementById('btn-scrape').innerText = "Kuting... ⏳";
-            const res = await fetch('/superadmin/scrape', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url}) });
+            const res = await fetch(`${API_URL}/superadmin/scrape`, { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url}) });
             const data = await res.json();
             document.getElementById('btn-scrape').innerText = "Matnni olish";
             if(res.ok) document.getElementById('qdrant-text').value = data.text;
@@ -872,7 +865,7 @@
             const content = document.getElementById('qdrant-text').value;
             if(!content) return alert("Matn bo'sh!");
     
-            const res = await fetch('/superadmin/qdrant/add', {
+            const res = await fetch(`${API_URL}/superadmin/qdrant/add`, {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ url, title, content }) 
             });
@@ -885,17 +878,14 @@
             } else alert("Saqlashda xatolik yuz berdi.");
         }
 
-        // Tanlangan fayllarni saqlash uchun global o'zgaruvchi
         let selectedFiles = [];
 
-        // 1. Fayllar oynadan oddiy tanlanganda
         function handleFileSelect(event) {
             const files = Array.from(event.target.files);
             if (!files.length) return;
             addFilesToSelection(files);
         }
 
-        // 2. Fayllar sudrab kelib drop-zone'ga tashlanganda
         function handleFileDrop(event) {
             event.preventDefault();
             document.getElementById('drop-zone').classList.remove('bg-red-50', 'border-red-400');
@@ -903,7 +893,6 @@
             const files = Array.from(event.dataTransfer.files);
             if (!files.length) return;
 
-            // Faqat ruxsat etilgan formatlarni saralash
             const allowedExtensions = ['.pdf', '.doc', '.docx'];
             const filteredFiles = files.filter(file => {
                 const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
@@ -913,27 +902,23 @@
             addFilesToSelection(filteredFiles);
         }
 
-        // Fayllarni massivga qo'shish va interfeysni yangilash
         function addFilesToSelection(files) {
             selectedFiles = [...selectedFiles, ...files];
             renderFilePreviews();
         }
 
-        // Tanlangan barcha fayllarni chiroyli render qilish
         function renderFilePreviews() {
             const container = document.getElementById('file-preview-list');
-            const btnUpload = document.getElementById('btn-upload-file'); // ID to'g'rilandi
+            const btnUpload = document.getElementById('btn-upload-file');
 
             if (selectedFiles.length === 0) {
                 container.innerHTML = '';
-                btnUpload.disabled = true; // Fayl bo'lmasa tugma qulflanadi
+                btnUpload.disabled = true;
                 return;
             }
 
-            // Tugmani faollashtirish
             btnUpload.disabled = false;
 
-            // Har bir fayl uchun alohida qator yaratish
             container.innerHTML = selectedFiles.map((file, index) => `
                 <div class="flex items-center gap-2 bg-white border border-red-100 rounded-lg px-3 py-2 text-sm shadow-sm">
                     <span class="text-lg shrink-0">📄</span>
@@ -944,21 +929,19 @@
             `).join('');
         }
 
-        // Ro'yxatdan bitta faylni o'chirish
         function removeSelectedFile(index) {
             selectedFiles.splice(index, 1);
             renderFilePreviews();
 
             if (selectedFiles.length === 0) {
-                document.getElementById('file-upload').value = ''; // ID to'g'rilandi
+                document.getElementById('file-upload').value = '';
             }
         }
 
-        // Hammasini tozalash (Muvaffaqiyatli yuklangandan so'ng)
         function clearFile() {
             selectedFiles = [];
             renderFilePreviews();
-            document.getElementById('file-upload').value = ''; // ID to'g'rilandi
+            document.getElementById('file-upload').value = '';
 
             const el = document.getElementById('upload-alert');
             if(el) {
@@ -967,13 +950,11 @@
             }
         }
 
-        // Xabar chiqarish tizimi
         function showUploadAlert(msg, cls) {
             const el = document.getElementById('upload-alert');
             if(!el) return;
             el.textContent = msg;
             
-            // Rnglarni to'g'rilash
             let bgClass = cls === 'ua-green' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
                         : cls === 'ua-red' ? 'bg-red-50 text-red-600 border-red-200' 
                         : 'bg-blue-50 text-blue-600 border-blue-200';
@@ -981,7 +962,6 @@
             el.className = `text-[10px] font-bold p-2.5 rounded-xl text-center border block mb-4 ${bgClass}`;
         }
 
-        // Serverga yuborish
         async function uploadFiles() {
             if (!selectedFiles.length) return;
 
@@ -993,7 +973,8 @@
             selectedFiles.forEach(file => formData.append('files', file));
 
             try {
-                const response = await fetch('/superadmin/upload-file', {
+                // Tuzatildi: bektek qo'yildi
+                const response = await fetch(`${API_URL}/superadmin/upload-file`, {
                     method: 'POST',
                     body: formData
                 });
@@ -1004,7 +985,7 @@
                     alert(data.message || "Fayllar muvaffaqiyatli yuklandi!");
                     selectedFiles = [];
                     renderFilePreviews();
-                    loadQdrantData(); // Jadvalni yangilash
+                    loadQdrantData();
                 } else {
                     alert("Xatolik: " + (data.detail || "Noma'lum xato"));
                 }
@@ -1017,28 +998,23 @@
         }
 
         let allLogs = []; 
+        let adminsLoaded = false;
 
-        let adminsLoaded = false; // Adminlar ro'yxati takroran yuklanishini oldini olish
-
-        // 1. 🔍 Asosiy filtrlash va ma'lumot yuklash funksiyasi (To'g'ridan-to'g'ri Backendga so'rov yuboradi)
         async function filterLogs() {
             const title = document.getElementById('log-search-title').value.trim();
             const admin = document.getElementById('log-filter-admin').value;
             const status = document.getElementById('log-filter-action').value;
 
-            // URL Query parametrlarni tayyorlaymiz
             const params = new URLSearchParams();
             if (title) params.append('title', title);
             if (admin) params.append('admin', admin);
             if (status) params.append('status', status);
 
             try {
-                // Yangilangan endpointga so'rov yuboramiz
-                const res = await fetch(`/superadmin/qdrant/logs?${params.toString()}`);
+                const res = await fetch(`${API_URL}/superadmin/qdrant/logs?${params.toString()}`);
                 const data = await res.json();
                 const logs = data.logs || [];
                 
-                // Faqat ilk yuklanishda (hech qanday filtr yo'qligida) admin dropdownini to'ldiramiz
                 if (!adminsLoaded && !title && !admin && !status) {
                     populateAdminDropdown(logs);
                     adminsLoaded = true;
@@ -1054,7 +1030,6 @@
             }
         }
 
-        // 2. Admin dropdown ro'yxatini shakllantirish
         function populateAdminDropdown(logs) {
             const adminSelect = document.getElementById('log-filter-admin');
             if (!adminSelect) return;
@@ -1070,19 +1045,18 @@
             });
         }
 
-        // 3. 🧹 Filtrlarni tozalash tugmasi
         function clearLogFilters() {
             document.getElementById('log-search-title').value = '';
             document.getElementById('log-filter-admin').value = '';
             document.getElementById('log-filter-action').value = '';
-            filterLogs(); // Parametrsiz qayta chaqiradi (hamma ma'lumotni tiklaydi)
+            filterLogs();
         }
 
-        // 4. 🗑 Barcha loglarni tozalash funksiyasi
         async function clearAllLogs() {
             if (!confirm("Haqiqatan ham barcha audit loglarini o'chirmoqchimisiz?")) return;
             try {
-                const res = await fetch('/superadmin/qdrant/logs', { method: 'DELETE' });
+                // Tuzatildi: bektek qo'yildi
+                const res = await fetch(`${API_URL}/superadmin/qdrant/logs`, { method: 'DELETE' });
                 if (res.ok) {
                     alert("Barcha loglar muvaffaqiyatli o'chirildi.");
                     filterLogs();
@@ -1094,77 +1068,114 @@
             }
         }
 
-        // 5. 📊 Loglarni jadvalga chiqarish (Siz taqdim etgan HTML tartibida)
+        // Global o'zgaruvchilar
+        let qdrantFullData = []; 
+
+        // =======================================
+        // 📊 LOGLARNI JADVALGA CHIQARISH
+        // =======================================
         function renderLogs(logs) {
             const tbody = document.getElementById('logs-table-body');
             if (!tbody) return;
             
             tbody.innerHTML = '';
 
-            if (logs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 italic">Hech qanday log topilmadi</td></tr>`;
+            if (!logs || logs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 italic bg-white">Hozircha hech qanday log yo‘q</td></tr>`;
                 return;
             }
 
             logs.forEach(log => {
                 const tr = document.createElement('tr');
-                tr.className = "border-b border-gray-100 hover:bg-gray-50/50 transition text-gray-700";
+                tr.className = "border-b border-slate-100 hover:bg-slate-50/50 transition text-slate-700";
 
-                // Amal turi banchlarining dizayni
+                // Amal turi (status) badge dizayni
                 const rawStatus = (log.status || '').toLowerCase().replace(/`/g, "'");
                 let statusClass = '';
                 if (rawStatus.includes('yangi')) {
                     statusClass = 'bg-emerald-50 text-emerald-700 border-emerald-100 px-2.5 py-1 rounded-xl text-[11px] font-bold inline-block border';
-                } else if (rawStatus.includes('o\'zgargan') || rawStatus.includes('o`zgargan')) {
+                } else if (rawStatus.includes("o'zgargan") || rawStatus.includes('o`zgargan')) {
                     statusClass = 'bg-amber-50 text-amber-700 border-amber-100 px-2.5 py-1 rounded-xl text-[11px] font-bold inline-block border';
-                } else if (rawStatus.includes('o\'chirildi') || rawStatus.includes('ochirildi')) {
+                } else if (rawStatus.includes("o'chirildi") || rawStatus.includes('ochirildi')) {
                     statusClass = 'bg-rose-50 text-rose-700 border-rose-100 px-2.5 py-1 rounded-xl text-[11px] font-bold inline-block border';
                 } else {
-                    statusClass = 'bg-gray-50 text-gray-700 border-gray-100 px-2.5 py-1 rounded-xl text-[11px] font-bold inline-block border';
+                    statusClass = 'bg-slate-50 text-slate-600 border-slate-100 px-2.5 py-1 rounded-xl text-[11px] font-bold inline-block border';
                 }
 
                 // URL yoki Fayl dizayni
                 const urlDisplay = log.url 
-                    ? `<a href="${log.url}" target="_blank" class="text-blue-600 hover:underline font-medium max-w-[220px] truncate block" title="${log.url}">${log.url}</a>`
-                    : `<span class="text-gray-400 italic">Yuklangan Fayl</span>`;
+                    ? `<a href="${log.url}" target="_blank" class="text-indigo-600 hover:underline font-medium max-w-[220px] truncate block" title="${log.url}">
+                        ${log.url.length > 45 ? log.url.substring(0, 42) + '...' : log.url}
+                       </a>`
+                    : `<span class="text-slate-400 italic">Qo'lda kiritilgan / Fayl</span>`;
+
+                // Sanani formatlash
+                let dateDisplay = '-';
+                if (log.created_at) {
+                    try {
+                        dateDisplay = new Date(log.created_at).toLocaleString('uz-UZ');
+                    } catch(e) {
+                        dateDisplay = log.created_at;
+                    }
+                }
 
                 tr.innerHTML = `
-                    <td class="p-4 font-medium text-gray-400">${log.id || '#'}</td>
+                    <td class="p-4 font-medium text-slate-400">#${log.id || ''}</td>
                     <td class="p-4">${urlDisplay}</td>
-                    <td class="p-4 font-semibold text-gray-900 break-words max-w-[250px]">${log.title || 'Sarlavhasiz'}</td>
-                    <td class="p-4 text-gray-600 font-medium">👤 ${log.added_by || 'Tizim'}</td>
+                    <td class="p-4 font-semibold text-slate-800 break-words max-w-[250px]" title="${log.title || ''}">
+                        ${log.title || 'Sarlavhasiz'}
+                    </td>
+                    <td class="p-4 text-slate-600 font-medium">👤 ${log.added_by || 'Tizim'}</td>
                     <td class="p-4 whitespace-nowrap"><span class="${statusClass}">${log.status || 'Noma\'lum'}</span></td>
-                    <td class="p-4 text-gray-400 whitespace-nowrap">${log.created_at || '-'}</td>
+                    <td class="p-4 text-slate-400 text-xs whitespace-nowrap">${dateDisplay}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
         // Sahifa yuklanishi bilan loglarni avtomat chaqiramiz
-        document.addEventListener('DOMContentLoaded', filterLogs);
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof filterLogs === 'function') {
+                filterLogs();
+            } else {
+                loadLogs();
+            }
+        });
 
         // Filtrlarni tozalash
         async function clearLogFilters() {
-            document.getElementById('log-search-title').value = '';
-            document.getElementById('log-filter-admin').value = '';
-            document.getElementById('log-filter-action').value = '';
-            if (!allLogs.length) {
+            const searchTitle = document.getElementById('log-search-title');
+            const filterAdmin = document.getElementById('log-filter-admin');
+            const filterAction = document.getElementById('log-filter-action');
+
+            if (searchTitle) searchTitle.value = '';
+            if (filterAdmin) filterAdmin.value = '';
+            if (filterAction) filterAction.value = '';
+
+            if (!allLogs || allLogs.length === 0) {
                 await loadLogs();
             } else {
-                filterLogs();
+                if (typeof filterLogs === 'function') {
+                    filterLogs();
+                } else {
+                    renderLogs(allLogs);
+                }
             }
         }
 
-        let qdrantFullData = []; 
-
+        // =======================================
+        // 🗄 QDRANT MA'LUMOTLARINI BOSHQARISH
+        // =======================================
         async function loadQdrantData() {
             try {
-                const r = await fetch('/superadmin/qdrant/list');
+                // To'g'rilandi: ' belgisi o'rniga backtick qo'yildi
+                const r = await fetch(`${API_URL}/superadmin/qdrant/list`);
                 const result = await r.json();
                 if (!r.ok) return;
         
                 qdrantFullData = result.data || [];
                 const tbody = document.getElementById('qdrant-table-body');
+                if (!tbody) return;
                 tbody.innerHTML = '';
         
                 if (!qdrantFullData.length) {
@@ -1176,7 +1187,7 @@
                     const tr = document.createElement('tr');
                     tr.className = "border-b border-slate-100 hover:bg-slate-50/80 transition text-slate-700";
 
-                    // 1. Manba qiymatini tekshirish
+                    // Manba qiymatini tekshirish
                     const manbaDisplay = String(item.url).startsWith('http')
                         ? `<a href="${item.url}" target="_blank" class="text-indigo-600 hover:underline font-medium">${item.url.substring(0,20)}…</a>`
                         : `<span class="text-slate-400 font-medium">Hujjat/Fayl</span>`;
@@ -1186,19 +1197,18 @@
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
                         : (item.holat && (item.holat.includes('O\'zgargan') || item.holat === 'O\'zgargan'))
                             ? 'bg-amber-50 text-amber-700 border-amber-200' 
-                            : 'bg-gray-50 text-gray-700';
+                            : 'bg-slate-50 text-slate-600 border-slate-200';
 
-                    // Admin username ni to'g'ri olish
                     const adminName = item.admin || item.added_by || item.superadmin || 'Noma\'lum';
 
                     tr.innerHTML = `
                         <td class="p-3 truncate font-medium text-slate-500">${manbaDisplay}</td>
                         
-                        <td class="p-3 font-semibold text-slate-800 break-words" title="${item.title || ''}">
+                        <td class="p-3 font-semibold text-slate-800 break-words max-w-[200px]" title="${item.title || ''}">
                             ${item.title || 'Sarlavhasiz'}
                         </td>
                         
-                        <td class="p-3 text-slate-500 truncate cursor-pointer hover:text-indigo-600 hover:underline" 
+                        <td class="p-3 text-slate-500 truncate cursor-pointer hover:text-indigo-600 hover:underline max-w-[250px]" 
                             onclick="showModal('${item.id}')" 
                             title="To'liq ko'rish uchun bosing">
                             ${item.matn_parchasi || ''}
@@ -1244,7 +1254,7 @@
                 return;
             }
             try {
-                const res = await fetch('/superadmin/qdrant/delete', {
+                const res = await fetch(`${API_URL}/superadmin/qdrant/delete`, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: id })
@@ -1253,7 +1263,7 @@
                 if (res.ok) {
                     loadQdrantData(); 
                 } else {
-                    alert("❌ Xatolik: " + data.detail);
+                    alert("❌ Xatolik: " + (data.detail || "O'chirish imkoni bo'lmadi."));
                 }
             } catch (e) {
                 alert("Server bilan ulanishda xatolik yuz berdi!");
@@ -1265,7 +1275,7 @@
             if (!confirm("Ishonchingiz komilmi? Bu amalni orqaga qaytarib bo'lmaydi!")) return;
 
             try {
-                const response = await fetch(`/superadmin/qdrant/delete-all`, {
+                const response = await fetch(`${API_URL}/superadmin/qdrant/delete-all`, {
                     method: 'DELETE'
                 });
 
@@ -1282,27 +1292,33 @@
         }
 
         // =======================================
-        // ADMINLARNI BOSHQARISH
+        // 👥 ADMINLARNI BOSHQARISH
         // =======================================
         async function loadAdmins() {
-            const res = await fetch('/superadmin/admins/list');
-            const data = await res.json();
-            const tbody = document.getElementById('admins-table-body');
-            tbody.innerHTML = '';
-            data.admins.forEach(admin => {
-                const date = new Date(admin.created_at).toLocaleDateString('uz-UZ');
-                tbody.innerHTML += `
-                    <tr class="border-b border-slate-100 hover:bg-slate-50/60 transition">
-                        <td class="p-4 text-slate-400 font-medium">#${admin.id}</td>
-                        <td class="p-4 font-semibold text-slate-800">${admin.username}</td>
-                        <td class="p-4 text-slate-500">${date}</td>
-                        <td class="p-4 text-right whitespace-nowrap">
-                            <button onclick="resetPassword(${admin.id}, '${admin.username}')" class="text-indigo-600 hover:text-indigo-800 font-bold text-xs mr-4 transition">Parolni yangilash</button>
-                            <button onclick="deleteAdmin(${admin.id}, '${admin.username}')" class="text-rose-600 hover:text-rose-800 font-bold text-xs transition">O'chirish</button>
-                        </td>
-                    </tr>
-                `;
-            });
+            try {
+                const res = await fetch(`${API_URL}/superadmin/admins/list`);
+                const data = await res.json();
+                const tbody = document.getElementById('admins-table-body');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+                
+                data.admins.forEach(admin => {
+                    const date = new Date(admin.created_at).toLocaleDateString('uz-UZ');
+                    tbody.innerHTML += `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50/60 transition">
+                            <td class="p-4 text-slate-400 font-medium">#${admin.id}</td>
+                            <td class="p-4 font-semibold text-slate-800">${admin.username}</td>
+                            <td class="p-4 text-slate-500">${date}</td>
+                            <td class="p-4 text-right whitespace-nowrap">
+                                <button onclick="resetPassword(${admin.id}, '${admin.username}')" class="text-indigo-600 hover:text-indigo-800 font-bold text-xs mr-4 transition cursor-pointer">Parolni yangilash</button>
+                                <button onclick="deleteAdmin(${admin.id}, '${admin.username}')" class="text-rose-600 hover:text-rose-800 font-bold text-xs transition cursor-pointer">O'chirish</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (e) {
+                console.error("Adminlarni yuklashda xatolik:", e);
+            }
         }
 
         async function addAdmin() {
@@ -1310,113 +1326,92 @@
             const password = document.getElementById('new-admin-pass').value;
             if(!username || !password) return alert("Barcha maydonlarni to'ldiring!");
             
-            const res = await fetch('/superadmin/admins/add', {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username, password })
-            });
-            const data = await res.json();
-            if(res.ok) {
-                alert(data.message || "Admin muvaffaqiyatli qo'shildi!");
-                document.getElementById('new-admin-user').value = '';
-                document.getElementById('new-admin-pass').value = '';
-                loadAdmins();
-            } else alert(data.detail);
+            try {
+                const res = await fetch(`${API_URL}/superadmin/admins/add`, {
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if(res.ok) {
+                    alert(data.message || "Admin muvaffaqiyatli qo'shildi!");
+                    document.getElementById('new-admin-user').value = '';
+                    document.getElementById('new-admin-pass').value = '';
+                    loadAdmins();
+                } else {
+                    alert(data.detail || "Xatolik yuz berdi");
+                }
+            } catch (e) {
+                alert("Ulanish xatoligi!");
+            }
         }
 
         async function resetPassword(id, username) {
             const newPass = prompt(`"${username}" uchun yangi parolni kiriting:`);
             if(!newPass) return;
 
-            const res = await fetch(`/superadmin/admins/${id}/reset-password`, {
-                method: 'PUT', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ new_password: newPass })
-            });
-            if(res.ok) alert("Parol muvaffaqiyatli yangilandi! ✅");
-            else alert("Xatolik yuz berdi.");
+            try {
+                const res = await fetch(`${API_URL}/superadmin/admins/${id}/reset-password`, {
+                    method: 'PUT', 
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ new_password: newPass })
+                });
+                if(res.ok) alert("Parol muvaffaqiyatli yangilandi! ✅");
+                else alert("Xatolik yuz berdi.");
+            } catch (e) {
+                alert("Ulanishda muammo yuz berdi.");
+            }
         }
 
         async function deleteAdmin(id, username) {
             if(!confirm(`Rostdan ham "${username}" adminni o'chirib tashlamoqchimisiz?`)) return;
 
-            const res = await fetch(`/superadmin/admins/${id}/delete`, { method: 'DELETE' });
-            if(res.ok) loadAdmins();
+            try {
+                const res = await fetch(`${API_URL}/superadmin/admins/${id}/delete`, { method: 'DELETE' });
+                if(res.ok) loadAdmins();
+            } catch (e) {
+                alert("Ulanishda muammo yuz berdi.");
+            }
         }
 
         // =======================================
-        // BAZA TARIXI (AUDIT LOGS)
+        // 🪵 BAZA TARIXI (AUDIT LOGS)
         // =======================================
         async function loadLogs() {
-            const res = await fetch('/superadmin/qdrant/logs');
-            const data = await res.json();
-            const tbody = document.getElementById('logs-table-body');
-            tbody.innerHTML = '';
-
-            if (!data.logs || data.logs.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="p-8 text-center text-slate-400 italic bg-white">
-                            Hozircha hech qanday log yo‘q
-                        </td>
-                    </tr>`;
-                return;
-            }
-
-            data.logs.forEach(log => {
-                const date = new Date(log.created_at).toLocaleString('uz-UZ');
-
-                // Status ranglarini to'g'ri belgilash
-                let statusClass = 'bg-blue-50 border border-blue-100 text-blue-800';
+            try {
+                const res = await fetch(`${API_URL}/superadmin/qdrant/logs`);
+                if (!res.ok) throw new Error("Server xatosi");
+                const data = await res.json();
                 
-                if (log.status && (log.status.includes('Yangi') || log.status === 'Yangi')) {
-                    statusClass = 'bg-emerald-50 border border-emerald-100 text-emerald-700';
-                } else if (log.status && (log.status.includes('O\'zgargan') || log.status === 'O\'zgargan')) {
-                    statusClass = 'bg-amber-50 border border-amber-100 text-amber-700';
-                } else if (log.status && log.status.includes('o\'chirildi')) {
-                    statusClass = 'bg-rose-50 border border-rose-100 text-rose-700';
+                // Filtrlash ishlashi uchun global o'zgaruvchini yangilaymiz
+                allLogs = data.logs || []; 
+                renderLogs(allLogs);
+            } catch (e) {
+                console.error("Loglarni yuklashda xatolik:", e);
+                const tbody = document.getElementById('logs-table-body');
+                if (tbody) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-rose-500 italic bg-white">Server bilan bog'lanib bo'lmadi</td></tr>`;
                 }
-
-                tbody.innerHTML += `
-                    <tr class="border-b border-slate-100 hover:bg-slate-50/50 transition">
-                        <td class="p-4 text-slate-400 font-medium">#${log.id}</td>
-                        <td class="p-4 text-indigo-600 truncate max-w-xs font-medium" title="${log.url || ''}">
-                            <a href="${log.url || '#'}" target="_blank" class="hover:underline">
-                                ${log.url ? (log.url.length > 45 ? log.url.substring(0, 42) + '...' : log.url) : 'Qo\'lda kiritilgan / Fayl'}
-                            </a>
-                        </td>
-                        <td class="p-4 truncate max-w-xs text-slate-700 font-medium" title="${log.title || ''}">
-                            ${log.title || 'Sarlavhasiz'}
-                        </td>
-                        <td class="p-4 font-bold text-slate-800">👤 ${log.added_by || 'Noma\'lum'}</td>
-                        <td class="p-4">
-                            <span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold ${statusClass}">
-                                ${log.status || 'Noma\'lum'}
-                            </span>
-                        </td>
-                        <td class="p-4 text-slate-400 text-xs whitespace-nowrap">${date}</td>
-                    </tr>
-                `;
-            });
+            }
         }
 
         async function clearAllLogs() {
             if (!confirm("⚠️ DIQQAT! BARCHA loglar butunlay o'chiriladi. Bu amalni orqaga qaytarib bo'lmaydi!\n\nDavom ettirasizmi?")) {
                 return;
             }
-            
             if (!confirm("Ishonchingiz komilmi? Bu juda katta amal!")) {
                 return;
             }
 
             try {
-                const response = await fetch('/superadmin/qdrant/logs/clear-all', {
+                const response = await fetch(`${API_URL}/superadmin/qdrant/logs/clear-all`, {
                     method: 'DELETE'
                 });
-
                 const data = await response.json();
 
                 if (response.ok) {
                     alert(data.message || "Barcha loglar muvaffaqiyatli tozalandi!");
-                    loadLogs(); // Jadvalni yangilash
+                    loadLogs(); 
                 } else {
                     alert("Xatolik: " + (data.detail || "Noma'lum xato"));
                 }

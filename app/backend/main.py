@@ -17,16 +17,26 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# 1. Ruxsat berilgan frontend manzillari ro'yxati
 origins = [
-    "http://localhost:8080"    # DIQQAT: Sayt internetga chiqqanda shuni qo'shasiz!
+    "http://localhost:8080",
+    
+    # 🌍 PRODUCTION (Jonli sayt) manzili:
+    # Sayt internetga chiqqanda pastdagi kabi real domenni qo'shasiz:
+    # "https://brb-assistant.vercel.app", 
+    # "https://sizning-domeningiz.uz"
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,        # 1. Tansoqchining VIP ro'yxati ("*" qilib qo'yish o'ta xavfli!)
-    allow_credentials=True,       # 2. Sessiya (Cookie)lar ishlashi uchun ruxsat berish
-    allow_methods=["GET", "POST", "PUT", "DELETE"], # 3. Faqat shu turdagi amallarga ruxsat
-    allow_headers=["Content-Type", "Accept", "Authorization", "X-Requested-With"],          # 4. Brauzer yuboradigan qo'shimcha ma'lumotlarga ruxsat
+    allow_origins=origins,        # VIP ro'yxatdagilarga ruxsat berish
+    allow_credentials=True,       # Cookie va Authorization sarlavhalari o'tishi uchun shart
+    
+    # OPTIONS metodi CORS preflight so'rovlari uchun kerak
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"], 
+    
+    # Brauzer yuboradigan qo'shimcha sarlavhalarga ruxsat
+    allow_headers=["Content-Type", "Accept", "Authorization", "X-Requested-With"],
 )
 
 # Routerlarni ulash
