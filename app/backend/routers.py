@@ -23,8 +23,12 @@ from fastapi.responses import FileResponse
 import PyPDF2
 import docx
 import os
+
 # Toshkent vaqt mintaqasini yaratamiz (UTC + 5 soat)
 tashkent_tz = timezone(timedelta(hours=5))
+
+# Local yoki Production muhitini aniqlash (Cookie xavfsizligi uchun)
+IS_PRODUCTION = os.getenv("ENV", "development") == "production"
 
 # ==========================================
 # XATONINI TUZATISH UCHUN QO'SHILGAN QISM
@@ -133,6 +137,49 @@ async def extract_text_from_file(file: UploadFile):
 
     return {"status": "success", "text": clean_text, "title": file.filename}
 
+# ==========================================
+# SESSION DEPENDENCY (YORDAMCHI FUNKSIYA)
+# ==========================================
+async def get_active_chat_session(
+    response: Response,
+    session_id: str | None = Cookie(default=None),
+    db: Session = Depends(get_db)
+) -> ChatSession:
+    """Sessiyani tekshiradi, yo'q bo'lsa yaratadi, pauzada bo'lsa xato beradi."""
+    if not session_id:
+        session_id = str(uuid.uuid4())
+        response.set_cookie(
+            key="session_id", 
+            value=session_id, 
+            httponly=True, 
+            samesite="none" if IS_PRODUCTION else "lax",    
+            secure=IS_PRODUCTION,      
+            max_age=31536000
+        )
+    
+    db_session = db.query(ChatSession).filter(ChatSession.session_id == session_id).first()
+    
+    if not db_session:
+        db_session = ChatSession(session_id=session_id) 
+        db.add(db_session)
+        db.commit()
+        
+        response.set_cookie(
+            key="session_id", 
+            value=session_id, 
+            httponly=True, 
+            samesite="none" if IS_PRODUCTION else "lax", 
+            secure=IS_PRODUCTION, 
+            max_age=31536000
+        )
+    else:
+        if getattr(db_session, "is_paused", False):
+            raise HTTPException(status_code=403, detail="Sizning sessiyangiz bank administratorlari tomonidan vaqtincha to'xtatilgan.")
+        
+        db_session.updated_at = datetime.now(tashkent_tz)
+        db.commit()
+        
+    return db_session
 
 # ==========================================
 # 1. CHAT BO'LIMI
@@ -145,43 +192,13 @@ class ChatResponse(BaseModel):
     
 @chat_router.post("/", response_model=ChatResponse)
 @limiter.limit("20/minute")
-async def chat_with_bot(request: Request, payload: ChatRequest, response: Response, session_id: str | None = Cookie(default=None), db: Session = Depends(get_db)):
-    
-    # 1. Agar brauzer cookieni tanimasdan umuman yubormasa yoki u bo'sh bo'lsa
-    if not session_id:
-        session_id = str(uuid.uuid4())
-        response.set_cookie(
-            key="session_id", 
-            value=session_id, 
-            httponly=True, 
-            samesite="lax",    
-            secure=False,      
-            max_age=31536000
-        )
-    
-    # Bazadan qidiramiz
-    db_session = db.query(ChatSession).filter(ChatSession.session_id == session_id).first()
-    
-    # 2. Agar bazada yo'q bo'lsa (yoki o'chirilgan bo'lsa) yangi ochamiz
-    if not db_session:
-        db_session = ChatSession(session_id=session_id) 
-        db.add(db_session)
-        db.commit()
-        
-        response.set_cookie(
-            key="session_id", 
-            value=session_id, 
-            httponly=True, 
-            samesite="lax", 
-            secure=False, 
-            max_age=31536000
-        )
-    else:
-        if db_session.is_paused:
-            raise HTTPException(status_code=403, detail="Sizning sessiyangiz bank administratorlari tomonidan vaqtincha to'xtatilgan.")
-        
-        db_session.updated_at = datetime.now(tashkent_tz)
-        db.commit()
+async def chat_with_bot(
+    request: Request, 
+    payload: ChatRequest, 
+    db_session: ChatSession = Depends(get_active_chat_session), 
+    db: Session = Depends(get_db)
+):
+    session_id = db_session.session_id
         
     # Suhbat tarixini bazadan tortib olamiz
     chat_history = db.query(ChatMessage).filter(ChatMessage.session_id == session_id).order_by(ChatMessage.created_at).all()
@@ -199,9 +216,6 @@ async def chat_with_bot(request: Request, payload: ChatRequest, response: Respon
     context, top_topic = search_knowledge_base(rewritten_query)
 
     # 🧠 MAVZUNI SESSIDAN SAQLASH LOGIKASI
-    # Agar Qdrant aniq mavzu topa olmasa (masalan, foydalanuvchi "rahmat" yoki "salom" desa),
-    # bazadagi ushbu sessiyada saqlangan oxirgi faol mavzuni saqlab qolamiz (chizma yo'qolib qolmasligi uchun).
-    # [Eslatma: ChatSession modelida 'current_topic' degan ustun (column) bor deb hisoblaymiz]
     if not top_topic:
         top_topic = getattr(db_session, "current_topic", "Umumiy suhbat") or "Umumiy suhbat"
     else:
@@ -253,43 +267,10 @@ class ProcessResponse(BaseModel):
 @chat_router.get("/processes", response_model=List[ProcessResponse])
 async def get_all_processes(
     request: Request,
-    response: Response,
     q: Optional[str] = Query(None),
     limit: int = Query(50),
-    session_id: str | None = Cookie(default=None),
-    db: Session = Depends(get_db)
+    db_session: ChatSession = Depends(get_active_chat_session)
 ):
-    # Session boshqaruvi va Qdrant'dan o'qish qismlari xuddi sizniki kabi o'zgarmaydi...
-    
-    # ── Session boshqaruvi ────────────────────────────────────
-    if not session_id:
-        session_id = str(uuid.uuid4())
-        response.set_cookie(
-            key="session_id", value=session_id,
-            httponly=True, samesite="lax", secure=False, max_age=31536000
-        )
-
-    db_session = db.query(ChatSession).filter(
-        ChatSession.session_id == session_id
-    ).first()
-
-    if not db_session:
-        db_session = ChatSession(session_id=session_id)
-        db.add(db_session)
-        db.commit()
-        response.set_cookie(
-            key="session_id", value=session_id,
-            httponly=True, samesite="lax", secure=False, max_age=31536000
-        )
-    else:
-        if db_session.is_paused:
-            raise HTTPException(
-                status_code=403,
-                detail="Sizning sessiyangiz bank administratorlari tomonidan vaqtincha to'xtatilgan."
-            )
-        db_session.updated_at = datetime.now(tashkent_tz)
-        db.commit()
-
     # ── Qdrant dan ma'lumot olish ─────────────────────────────
     try:
         records, _ = qdrant_client.scroll(
@@ -432,22 +413,13 @@ class LogInteractionRequest(BaseModel):
     bot_message: str
 
 @chat_router.post("/log-interaction")
-def log_interaction(payload: LogInteractionRequest, session_id: str | None = Cookie(default=None), db: Session = Depends(get_db)):
+def log_interaction(
+    payload: LogInteractionRequest, 
+    db_session: ChatSession = Depends(get_active_chat_session), 
+    db: Session = Depends(get_db)
+):
     """Frontendda bosilgan tugmalar va UI habarlarini tarixga jimgina saqlash"""
-    if not session_id:
-        return {"status": "error", "detail": "Session topilmadi"}
-        
-    db_session = db.query(ChatSession).filter(ChatSession.session_id == session_id).first()
-    if not db_session:
-        db_session = ChatSession(session_id=session_id) 
-        db.add(db_session)
-        db.commit()
-    
-    # AGAR SESSIYA PAUZADA BO'LSA - HATTO TUGMALAR HAM YOZILMAYDI
-    if db_session.is_paused:
-        raise HTTPException(status_code=403, detail="Sessiya to'xtatilgan")
-        
-    db_session.updated_at = datetime.now(tashkent_tz)
+    session_id = db_session.session_id
     
     user_msg = ChatMessage(session_id=session_id, sender="user", text=payload.user_message)
     bot_msg = ChatMessage(session_id=session_id, sender="bot", text=payload.bot_message)
@@ -781,7 +753,7 @@ def chunk_text(text: str, max_chars: int = 100000) -> list[str]:
 # ADMIN UCHUN: KOP FAYLDAN YUKLASH VA BAZAGA YOZISH (AUDIT BILAN)
 # ==========================================
 @admin_router.post("/upload-file")
-async def superadmin_upload_file(
+async def admin_upload_file(
     request: Request,
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_db)
