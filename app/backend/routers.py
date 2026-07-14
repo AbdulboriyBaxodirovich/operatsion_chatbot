@@ -519,7 +519,7 @@ def admin_login(request: Request, data: AdminLogin, response: Response, db: Sess
         raise HTTPException(status_code=401, detail="Login/parol xato yoki siz oddiy admin emassiz!")
 
     # Agar to'g'ri bo'lsa, brauzerga 1 kunlik (86400 soniya) Cookie o'rnatamiz
-    response.set_cookie(key="admin_user", value=user.username, httponly=True, samesite="strict", secure=True)
+    response.set_cookie(key="admin_user", value=user.username, httponly=True, samesite="strict", secure=False)
     return {"status": "success", "username": user.username, "role": user.role}
 
 # 3. Tizimdan chiqish (Logout)
@@ -1272,7 +1272,7 @@ def superadmin_login(request: Request, data: SuperAdminLogin, response: Response
         if not user:
             raise HTTPException(status_code=401, detail="Login yoki parol noto'g'ri!")
 
-    response.set_cookie(key="superadmin_user", value=user.username, httponly=True, samesite="strict", secure=True, max_age=86400)
+    response.set_cookie(key="superadmin_user", value=user.username, httponly=True, samesite="strict", secure=False, max_age=86400)
     return {"status": "success", "username": user.username}
 
 @superadmin_router.post("/logout")
@@ -1290,7 +1290,7 @@ def update_superadmin_settings(data: SuperAdminUpdate, response: Response, admin
     admin.password = data.new_password
     db.commit()
     
-    response.set_cookie(key="superadmin_user", value=admin.username, httponly=True, samesite="strict", secure=True)
+    response.set_cookie(key="superadmin_user", value=admin.username, httponly=True, samesite="strict", secure=False, max_age=86400)
     return {"status": "success", "message": "Ma'lumotlar muvaffaqiyatli yangilandi!"}
 
 # ====================================================
