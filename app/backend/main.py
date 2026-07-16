@@ -19,7 +19,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # 1. Ruxsat berilgan frontend manzillari ro'yxati
 origins = [
-    "https://operatsion-chatbot-g8zrqf16-abdulboriy-s-projects.vercel.app",  # Vercel'dagi frontend manzili,
+    "https://operatsion-chatbot.vercel.app",  # Vercel'dagi frontend manzili,
     "http://localhost:8080",  # Mahalliy rivojlantirish uchun
     # 🌍 PRODUCTION (Jonli sayt) manzili:
     # Sayt internetga chiqqanda pastdagi kabi real domenni qo'shasiz:
