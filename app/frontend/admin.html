@@ -383,7 +383,7 @@
 <script>
   /* ===================== BACKEND MANZILI (API_URL) ===================== */
   // Sizning faol Cloudflare tunnel manzilingiz
-  const API_URL = "";
+  const API_URL = (location.hostname === "localhost" || location.hostname === "127.0.0.1") ? "" : "/api";
 
   let allSessionsCached=[], qdrantFullData=[], selectedFiles=[];
   let inactivityTimer;

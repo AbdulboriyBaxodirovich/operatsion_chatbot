@@ -2,6 +2,14 @@
   "trailingSlash": false,
   "rewrites": [
     {
+      "source": "/admin-panel",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/superadmin-panel",
+      "destination": "/superadmin.html"
+    },
+    {
       "source": "/api/chat",
       "destination": "https://authority-shareware-negotiations-sheriff.trycloudflare.com/chat/"
     },
