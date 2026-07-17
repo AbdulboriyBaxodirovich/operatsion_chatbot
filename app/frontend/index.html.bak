@@ -91,7 +91,7 @@
       font-family: 'Inter', sans-serif;
       background: var(--bg);
       color: var(--txt);
-      height: 100dvh;
+      height: 100vh;
       overflow: hidden;
       display: flex;
       -webkit-font-smoothing: antialiased;
@@ -142,7 +142,6 @@
     #sidebar {
       width: var(--sw); min-width: var(--sw); background: var(--bg2);
       border-right: 1px solid var(--border); display: flex; flex-direction: column;
-      overflow: hidden;   /* ← qo'shildi */
       transition: transform .35s cubic-bezier(.4,0,.2,1), background .35s; z-index: 50;
     }
     .sbh { padding: 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
@@ -174,7 +173,7 @@
     .srchi input { flex: 1; background: transparent; border: none; outline: none; font-size: 13px; color: var(--txt); font-family: inherit; }
     .srchi input::placeholder { color: var(--txt3); }
 
-    .sbscroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 12px 12px; -webkit-overflow-scrolling: touch; }
+    .sbscroll { flex: 1; overflow-y: auto; padding: 0 12px 12px; }
     .sblabel {
       font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--txt3);
       text-transform: uppercase; padding: 12px 12px 8px;
@@ -657,7 +656,7 @@
 <script>
   /* ===================== BACKEND MANZILI (API_URL) ===================== */
   // Sizning faol Cloudflare tunnel manzilingiz
-  const API_URL = "/api";
+  const API_URL = "https://authority-shareware-negotiations-sheriff.trycloudflare.com";
 
   /* ===================== HOLAT (STATE) ===================== */
   let PROCS = {}, _all = [], activeProc = null, currentStep = null, _hopen = false, _busy = false;

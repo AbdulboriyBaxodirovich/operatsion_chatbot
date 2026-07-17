@@ -30,7 +30,7 @@ async function sendMessage() {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
     try {
-        const response = await fetch('https://authority-shareware-negotiations-sheriff.trycloudflare.com/chat', {
+        const response = await fetch('/api/chat', {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
