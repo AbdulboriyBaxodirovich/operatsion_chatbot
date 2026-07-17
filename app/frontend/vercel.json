@@ -1,5 +1,10 @@
 {
+  "trailingSlash": false,
   "rewrites": [
+    {
+      "source": "/api/chat",
+      "destination": "https://authority-shareware-negotiations-sheriff.trycloudflare.com/chat/"
+    },
     {
       "source": "/api/:path*",
       "destination": "https://authority-shareware-negotiations-sheriff.trycloudflare.com/:path*"
