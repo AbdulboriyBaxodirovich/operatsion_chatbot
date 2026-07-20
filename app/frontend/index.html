@@ -462,7 +462,7 @@
     #overlay.show { display: block; }
 
     @media(max-width:768px) {
-      #sidebar { position: fixed; top: 0; left: 0; height: 100vh; transform: translateX(-100%); box-shadow: var(--shadow-lg); }
+      #sidebar { position: fixed; top: 0; left: 0; height: 100dvh; transform: translateX(-100%); box-shadow: var(--shadow-lg); }
       #sidebar.open { transform: translateX(0); }
       #sbtog { display: flex !important; }
       #chdr { padding: 0 16px; height: 66px; }
@@ -1084,6 +1084,7 @@
 
   /* ===================== ISHGA TUSHIRISH ===================== */
   loadProcesses();
+  setTimeout(() => { const w = document.getElementById('welcome'); if (w) w.style.display = 'none'; }, 2800);
 </script>
 </body>
 </html>
