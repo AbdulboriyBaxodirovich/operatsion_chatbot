@@ -276,11 +276,12 @@
       content: ''; position: absolute; bottom: -1px; right: -1px; width: 12px; height: 12px;
       background: var(--green); border: 2.5px solid var(--bg-chat); border-radius: 50%;
     }
-    .hinfo h1 { font-size: 15.5px; font-weight: 700; letter-spacing: -.2px; }
+    .hinfo { flex: 1; min-width: 0; overflow: hidden; }
+    .hinfo h1 { font-size: 15.5px; font-weight: 700; letter-spacing: -.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .hstatus { font-size: 12px; color: var(--txt2); display: flex; align-items: center; gap: 6px; margin-top: 3px; }
     .sdot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); animation: sgl 2.5s ease infinite; }
     @keyframes sgl { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
-    .hright { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+    .hright { margin-left: auto; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
     .ppill {
       padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
       background: var(--acc-light); border: 1px solid var(--acc-light2); color: var(--acc);
@@ -468,6 +469,7 @@
       #chdr { padding: 0 16px; height: 66px; }
       #chat-box { padding: 20px 16px; }
       #input-area { padding: 4px 16px 16px; }
+      .ppill { display: none !important; }
       #quick-bar { padding: 10px 16px; }
       .mwrap { max-width: 86%; }
     }
