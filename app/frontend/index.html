@@ -694,9 +694,30 @@
 
   /* ===================== SIDEBAR ===================== */
   function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('open');
-    document.getElementById('overlay').classList.toggle('show');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const isOpening = !sidebar.classList.contains('open');
+
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+
+    if (isOpening) {
+        // Panel ochilganda, brauzer tarixiga "sun'iy" bosqich qo'shamiz
+        history.pushState({ sidebarOpen: true }, '');
+    } else if (history.state && history.state.sidebarOpen) {
+        // Panel tugma orqali yopilganda, sun'iy bosqichni orqaga qaytaramiz
+        history.back();
+    }
   }
+
+  // Telefon "Orqaga" tugmasi yoki gesture bosilganda
+  window.addEventListener('popstate', () => {
+      const sidebar = document.getElementById('sidebar');
+      if (sidebar.classList.contains('open')) {
+          sidebar.classList.remove('open');
+          document.getElementById('overlay').classList.remove('show');
+      }
+  });
 
   /* ===================== ADMIN MENYU ===================== */
   function toggleAdminMenu(event) {
