@@ -349,6 +349,11 @@
             </div>
             <button class="btn-refresh" onclick="loadQdrantData()">↻ Yangilash</button>
           </div>
+          <div class="filter-row">
+            <input class="fi flex-1" type="text" id="qdrant-search" oninput="filterQdrantTable()" placeholder="Hujjat nomi bo'yicha qidirish...">
+            <button class="btn-sm" onclick="clearQdrantFilter()">Tozalash</button>
+          </div>
+
           <div class="tbl-wrap" style="max-height:380px">
             <table class="tbl">
               <thead><tr>
@@ -659,13 +664,23 @@
   }
 
   async function loadQdrantData(){
-    try{
-      const r=await fetch(`${API_URL}/admin/qdrant/list`, { credentials: 'include' });const result=await r.json();
-      if(!r.ok)return;
-      qdrantFullData=result.data||[];
-      const tbody=document.getElementById('qdrant-table-body');tbody.innerHTML='';
-      if(!qdrantFullData.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--txt3);font-style:italic">Bazaga hali hech narsa qo\'shilmagan</td></tr>';return}
-      qdrantFullData.forEach(item=>{
+      try{
+        const r=await fetch(`${API_URL}/admin/qdrant/list`, { credentials: 'include' });
+        const result=await r.json();
+        if(!r.ok)return;
+        qdrantFullData=result.data||[];
+        renderQdrantTable(qdrantFullData);
+      }catch(e){console.warn(e)}
+    }
+
+    function renderQdrantTable(list){
+      const tbody=document.getElementById('qdrant-table-body');
+      tbody.innerHTML='';
+      if(!list.length){
+        tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--txt3);font-style:italic">Hujjat topilmadi</td></tr>';
+        return;
+      }
+      list.forEach(item=>{
         const tr=document.createElement('tr');
         const sc=item.holat==='Yangi'?'badge-green':item.holat==="O'zgargan"?'badge-amber':'';
         const urlD=String(item.url).startsWith('http')?`<a href="${item.url}" target="_blank" style="color:var(--red);font-size:11px">${item.url.substring(0,30)}…</a>`:`<span style="color:var(--txt2);font-size:11px">${item.url||'Fayl'}</span>`;
@@ -677,8 +692,20 @@
           <td style="text-align:center"><button class="btn-tbl btn-del" onclick="deleteQdrantItem('${item.id}')">🗑 O'chirish</button></td>`;
         tbody.appendChild(tr);
       });
-    }catch(e){console.warn(e)}
-  }
+    }
+
+    function filterQdrantTable(){
+      const q = document.getElementById('qdrant-search').value.toLowerCase().trim();
+      const filtered = q
+        ? qdrantFullData.filter(item => (item.title || '').toLowerCase().includes(q))
+        : qdrantFullData;
+      renderQdrantTable(filtered);
+    }
+
+    function clearQdrantFilter(){
+      document.getElementById('qdrant-search').value = '';
+      renderQdrantTable(qdrantFullData);
+    }
   function showModal(id){
     const item=qdrantFullData.find(x=>String(x.id)===String(id));
     if(!item)return;

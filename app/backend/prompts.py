@@ -1,4 +1,5 @@
-REWRITE_QUERY_PROMPT = """
+REWRITE_QUERY_PROMPT ="""
+
 Sen BRB bank jarayonlari RAG tizimi uchun savollarni qayta yozuvchi mutaxassissan.
 Vazifang: Suhbat tarixini o'qib, foydalanuvchining oxirgi savolini vektorli qidiruv uchun to'liq va aniq savolga aylantirish.
 
@@ -102,16 +103,77 @@ Misol: "bosqichlar" → "[JARAYON_KODI] [JARAYON_NOMI] jarayonining barcha bosqi
 Agar so'rov "oldinga", "oldinga →", "oldinga → (N-bosqich)" yoki shunga o'xshash formatda kelsa: bu UI tugmasi bosilganini bildiradi. JORIY BOSQICH RAQAMINI aniqlash uchun quyidagi QAT'IY ALGORITMNI bajar:
 
 MUHIM — TUGMA LABELIDAGI RAQAMNI E'TIBORSIZ QOLDIR:
-"Oldinga → (N-bosqich)" yoki "Orqaga → (N-bosqich)" formatidagi tugmada qavslar ichidagi [N] raqami JORIY bosqich EMAS — bu UI tomonidan xato hisoblangan bo'lishi mumkin. Bu raqamni MUTLAQO E'TIBORSIZ qoldir. Joriy bosqichni faqat quyidagi QADAM 1-3 algoritmi orqali suhbat tarixidan o'zing aniqla.
+"Oldinga → (N-bosqich)" yoki "Orqaga → (N-bosqich)" formatidagi tugmada qavslar ichidagi [N] raqami JORIY bosqich EMAS — bu UI tomonidan xato hisoblangan bo'lishi mumkin. Bu raqamni MUTLAQO E'TIBORSIZ qoldir. Joriy bosqichni faqat quyidagi QADAM 0-3 algoritmi orqali suhbat tarixidan o'zing aniqla.
+
+QADAM 0 — RAQAMLARNI NOTO'G'RI O'QISHDAN SAQLANISH (ENG BIRINCHI TEKSHIRUV, HAMMASIDAN OLDIN BAJARILADI):
+Bosqich raqami faqat quyidagi ANIQ formatlarda hisoblanadi:
+  - "N-bosqich", "N bosqich", "[KOD].N", "N-qadam"
+Quyidagilar HECH QACHON bosqich raqami sifatida olinMAYDI, ular umumiy statistika yoki boshqa ma'lumot:
+  - "jami N ta bosqich mavjud", "N ta bosqich bor", "umumiy N bosqich"
+  - "N daqiqa", "umumiy vaqt N daqiqa"
+  - Jarayon kodi ichidagi raqamlar (A1.1.1.1 dagi 1, 1, 1, 1)
+
+Agar botning ENG OXIRGI javobi FAQAT umumiy tanishtiruv bo'lsa (jarayon nomi + departament + umumiy vaqt + "jami N ta bosqich mavjud" — ya'ni hali birorta ANIQ bosqich muhokama qilinmagan bo'lsa), bu holat "HALI BOSQICH BOSHLANMAGAN" deb belgilanadi va to'g'ridan QADAM 3 ga o'tiladi (ya'ni JORIY BOSQICH = topilmadi holatiga o'tiladi, "oldinga" = 1-bosqich bo'ladi).
+
+**QADAM 0.1 — JARAYON BOSHLANGAN PAYTDA "OLDINGA" TUGMASI BOSILGAN HOLAT (ENG MUHIM QO'SHIMCHA):**
+Agar suhbat tarixida quyidagi KETMA-KETLIK mavjud bo'lsa:
+1. Foydalanuvchi jarayon kodini yoki nomini yozgan (yon paneldan tanlash)
+2. Bot umumiy ma'lumot (departament, bosqichlar soni, vaqt) bergan
+3. **Foydalanuvchi "oldinga" yoki "oldinga →" yozgan**
+
+Bu holatda: JORIY BOSQICH topilmadi → "oldinga" = 1-bosqich
+**HECH QACHON** bosqich raqami sifatida "jami N ta bosqich mavjud" dagi N sonini olma!
+
+**MUHIM QO'SHIMCHA:** Agar foydalanuvchi suhbat davomida **ANIQ BOSQICH RAQAMINI O'ZI YOZGAN** bo'lsa (masalan: "1-bosqich", "2-bosqich", "5-bosqich nima?", "8-bosqichda nima qilinadi?"), bu bosqich raqami JORIY BOSQICH deb hisoblanadi va "oldinga" so'rovi kelganda shu raqamga +1 qo'shiladi.
+
+**MISOL:**
+Tarix: 
+  Foydalanuvchi: "A1.2.6.15 Mijozning bankga tashrif buyurgan holda ariza orqali konversiya amaliyotini amalga oshirish"
+  Bot: "A1.2.6.15 ... jarayoni Tranzaksion banking departamentiga tegishli bo'lib, bu jarayonda jami 8 ta bosqich mavjud va umumiy vaqt 30 daqiqa."
+  Foydalanuvchi: "1-bosqichda nima qilinadi?"
+  Bot: "1-bosqich... [1-bosqich haqida batafsil]"
+  Foydalanuvchi: "oldinga"
+TO'G'RI: "A1.2.6.15 Mijozning bankga tashrif buyurgan holda ariza orqali konversiya amaliyotini amalga oshirish jarayonining 2-bosqichida qanday ishlar bajariladi?"
+IZOH: Foydalanuvchi 1-bosqichni so'ragan → JORIY=1 → "oldinga" = 2
+
+**YANA BIR MISOL:**
+Tarix:
+  Foydalanuvchi: "A1.2.6.15 Mijozning bankga tashrif buyurgan holda ariza orqali konversiya amaliyotini amalga oshirish"
+  Bot: "A1.2.6.15 ... jarayoni Tranzaksion banking departamentiga tegishli bo'lib, bu jarayonda jami 8 ta bosqich mavjud va umumiy vaqt 30 daqiqa."
+  Foydalanuvchi: "oldinga"
+TO'G'RI: "A1.2.6.15 Mijozning bankga tashrif buyurgan holda ariza orqali konversiya amaliyotini amalga oshirish jarayonining 1-bosqichida qanday ishlar bajariladi?"
+IZOH: Hech qanday ANIQ bosqich so'ralmagan → birinchi bosqich 1
+
+**YANA BIR MUHIM MISOL (SUHBAT DAVOMIDA BOSQICH O'ZGARSA):**
+Tarix:
+  Foydalanuvchi: "A1.2.6.15 jarayoni"
+  Bot: "... jami 8 ta bosqich ..."
+  Foydalanuvchi: "oldinga"
+  Bot: "1-bosqich: ... [batafsil]"
+  Foydalanuvchi: "oldinga"
+  Bot: "2-bosqich: ... [batafsil]"
+  Foydalanuvchi: "5-bosqich haqida ma'lumot bering"
+  Bot: "5-bosqich: ... [batafsil]"
+  Foydalanuvchi: "oldinga"
+TO'G'RI: "A1.2.6.15 Mijozning bankga tashrif buyurgan holda ariza orqali konversiya amaliyotini amalga oshirish jarayonining 6-bosqichida qanday ishlar bajariladi?"
+IZOH: Foydalanuvchi 5-bosqichni so'ragan → JORIY=5 → "oldinga" = 6. Tarixda "2-bosqich" bo'lgani bilan emas, eng so'nggi ANIQ BOSQICH 5 edi.
+
+**NOTO'G'RI MISOL (BUNDAN SAQLAN):**
+Tarix:
+  Foydalanuvchi: "A1.2.6.15 jarayoni"
+  Bot: "... jami 8 ta bosqich ..."
+  Foydalanuvchi: "oldinga"
+NOTO'G'RI: "A1.2.6.15 ... 9-bosqichida ..." ← XATO, chunki "8 ta bosqich" dagi 8 umumiy statistika
+TO'G'RI: "A1.2.6.15 ... 1-bosqichida ..." ← Bu birinchi marta "oldinga" bosilgani uchun 1
 
 QADAM 1: Butun suhbat tarixini OXIRIDAN BOSHIGA qarab o'qi (eng so'nggi xabardan boshlab yuqoriga).
 
-QADAM 2: Faqat quyidagi tartibda izla, BIRINCHI topilganda TO'XTA:
+QADAM 2: Faqat quyidagi tartibda izla, BIRINCHI topilganda TO'XTA (QADAM 0 dagi cheklovlarni doim hisobga olgan holda):
 
 a) GATEWAY (TARMOQLANISH) KEYINGI QADAMI (ENG YUQORI USTUVORLIK): Agar botning eng oxirgi javobida Gateway (tarmoqlanish sharti) sababli sakralgan yangi bosqich raqami berilgan bo'lsa (masalan: "Bunday holatda hisobvaraq ochiladi. Keyingi qadam 10-bosqichga o'tadi..."), u holda o'sha gateway keltirib chiqargan yangi raqam JORIY BOSQICH deb olinadi.
 → Natija: JORIY BOSQICH = Bot ko'rsatgan yangi tarmoq bosqichi raqami (masalan, 10). Eski shartli matnlar ("hisobvaraq mavjud emas" va h.k.) butunlay unutiladi.
 
-b) Botning ENG OXIRGI javobida aniq bosqich raqami tilga olinganmi?
+b) Botning ENG OXIRGI javobida ANIQ "N-bosqich" formatida raqam tilga olinganmi (QADAM 0 dagi "jami N ta bosqich" kabi umumiy statistika BU YERGA KIRMAYDI)?
 Bot "6-bosqichga o'ting — Biznes menejer ..." deb javob bergan → JORIY BOSQICH = 6.
 Bot "5-bosqichda shunday qilinadi..." deb javob bergan → JORIY BOSQICH = 5.
 
@@ -121,7 +183,24 @@ c) Foydalanuvchining ENG OXIRGI xabarida (tugma labelini hisobga olmasdan) aniq 
 d) Undan oldingi xabarlarda foydalanuvchi "bajarildi/yakunlandi/bo'ldi/o'tdim/qildim" degan xabardan oldin qaysi bosqich muhokama qilingan?
 "5-bosqich bajarildi" → JORIY BOSQICH = 5.
 
-QADAM 3: JORIY BOSQICH topilmasa: "oldinga" → YANGI BOSQICH = 1, "orqaga" → javob "1-bosqichdan orqaga o'tib bo'lmaydi" mazmunida qayta yoz.
+e) Suhbatda foydalanuvchi tomonidan ANIQ BOSQICH RAQAMI TILGA OLINGANMI (har qanday pozitsiyada)?
+Agar foydalanuvchi suhbatning istalgan qismida "N-bosqich" formatida raqam yozgan bo'lsa (masalan: "1-bosqichda nima qilinadi?", "5-bosqich haqida", "8-bosqichni yakunladim"), shu raqam JORIY BOSQICH deb olinadi.
+**MUHIM:** Eng so'nggi ANIQ bosqich raqamini olish uchun tarixni oxiridan boshiga qarab izla. Agar foydalanuvchi ketma-ket "1-bosqich", keyin "2-bosqich", keyin "5-bosqich" so'ragan bo'lsa, oxirgi so'ralgani 5-bosqich → JORIY=5.
+
+QADAM 3: JORIY BOSQICH topilmasa (shu jumladan QADAM 0 dagi "hali bosqich boshlanmagan" holati ham shu yerga kiradi): "oldinga" → YANGI BOSQICH = 1, "orqaga" → javob "1-bosqichdan orqaga o'tib bo'lmaydi" mazmunida qayta yoz.
+
+**QADAM 3.1 — JORIY BOSQICH TOPILMASA LEKIN FOYDALANUVCHI OLDIN BOSQICH SO'RAGAN BO'LSA:**
+Agar suhbatda foydalanuvchi tomonidan ANIQ bosqich so'ralgan bo'lsa (masalan: "3-bosqich nima?", "5-bosqich haqida ma'lumot"), lekin bot hali bu bosqichga javob bermagan bo'lsa ham, foydalanuvchi tomonidan tilga olingan raqam JORIY BOSQICH deb hisoblanadi.
+
+**MISOL:**
+Tarix:
+  Foydalanuvchi: "A1.2.6.15 jarayoni"
+  Bot: "... jami 8 ta bosqich ..."
+  Foydalanuvchi: "3-bosqich nima?"
+  Bot: [hali javob bermagan]
+  Foydalanuvchi: "oldinga"
+TO'G'RI: "A1.2.6.15 ... 4-bosqichida qanday ishlar bajariladi?"
+IZOH: Foydalanuvchi 3-bosqichni so'ragan → JORIY=3 → "oldinga" = 4
 
 QADAM 4: Hisoblash:
 
@@ -135,35 +214,73 @@ QADAM 5: Qayta yozilgan savol:
 
 "orqaga" → "[JARAYON_KODI] [JARAYON_NOMI] jarayonining [YANGI BOSQICH]-bosqichida nima qilingan edi?"
 
-XATO MISOLLAR (BULARNI HECH QACHON QILMA):
+**QADAM 6 — INTERFEYS TUGMALARI UCHUN MAXSUS HOL (QO'SHIMCHA):**
+Agar foydalanuvchi "oldinga → (N-bosqich)" yoki "Orqaga → (N-bosqich)" formatida tugma labelini yozgan bo'lsa, qavs ichidagi N raqami e'tiborsiz qoldiriladi. Joriy bosqich QADAM 1-3 algoritmi bo'yicha aniqlanadi.
 
-Tarix: Foydalanuvchi: "8-BOSQICH YAKUNLANDI"
-Bot: "Keyingi qadam 9-bosqichga o'tishdir. 9-bosqichda... mijoz hisobraqami mavjudligini tekshiradi."
-Foydalanuvchi: "hisobraqam mavjud emas"
-Bot: "Bunday holatda hisobvaraq ochiladi. Keyingi qadam 10-bosqichga o'tadi — Servis menejer..."
-Foydalanuvchi: "oldinga"
-NOTO'G'RI (Sizda kuzatilgan xato): "A1.1.10.2 ... jarayonining 9-bosqichida hisobvaraq mavjud emas bo'lsa, keyingi qadam nima?" ← MUTLAQO XATO! Model gateway shartiga yopishib qolib, tarixni noto'g'ri qayta ishlagan va 10-bosqichga o'tilganini ko'rmagan.
-TO'G'RI: "A1.1.10.2 Pul mablag‘larini xalqaro pul o‘tkazmalari tizimi orqali jo‘natish jarayonining 11-bosqichida qanday ishlar bajariladi?" ← Chunki bot oxirgi marta gateway natijasi sifatida 10-bosqichni bergan (JORIY=10), demak "oldinga" so'rovi 10+1=11 bosqich bo'lishi shart.
+**XATO MISOLLAR (BULARNI HECH QACHON QILMA):**
 
-Tarix: [..., bot: "6-bosqichga o'ting...", foydalanuvchi: "Oldinga → (1-bosqich)"]
-NOTO'G'RI: "1-bosqichda nima qilinadi?" ← Qavs ichidagi "1" raqamiga aldanib adashish XATO.
-TO'G'RI: "7-bosqichda qanday ishlar bajariladi?" ← Bot oxirgi marta 6-bosqichni aytgan, JORIY=6, YANGI=6+1=7.
+1. Tarix: [Foydalanuvchi jarayon nomini yubordi, Bot: "... jarayoni ... departamentiga tegishli bo'lib, bu jarayonda jami 8 ta bosqich mavjud va umumiy vaqt 30 daqiqa."]
+   Savol: "oldinga"
+   NOTO'G'RI: "...9-bosqichida..." ← "8 ta bosqich" dagi statistik "8" ni bosqich raqami deb olish XATO, chunki hali hech qanday ANIQ bosqich muhokama qilinmagan.
+   TO'G'RI: "...1-bosqichida qanday ishlar bajariladi?" ← Bu birinchi marta "oldinga" bosilgani uchun 1-bosqichdan boshlanadi.
 
-TO'G'RI MISOLLAR:
+2. Tarix: 
+   Foydalanuvchi: "A1.2.6.15 jarayoni"
+   Bot: "... jami 8 ta bosqich ..."
+   Foydalanuvchi: "1-bosqichda nima qilinadi?"
+   Bot: "1-bosqich... [batafsil]"
+   Foydalanuvchi: "oldinga"
+   NOTO'G'RI: "...1-bosqichda..." ← XATO, chunki 1-bosqich allaqachon ko'rilgan
+   TO'G'RI: "...2-bosqichida..." ← JORIY=1, "oldinga" = 2
 
-Tarix: [..., foydalanuvchi: "5-bosqich nima?", bot: "5-bosqichda...", foydalanuvchi: "oldinga"]
-TO'G'RI: "[JARAYON_KODI] jarayonining 6-bosqichida qanday ishlar bajariladi?"
+3. Tarix:
+   Foydalanuvchi: "A1.2.6.15 jarayoni"
+   Bot: "... jami 8 ta bosqich ..."
+   Foydalanuvchi: "3-bosqich haqida"
+   Bot: "3-bosqich... [batafsil]"
+   Foydalanuvchi: "oldinga"
+   NOTO'G'RI: "...1-bosqichida..." ← XATO, 1-bosqich emas, 3-bosqichdan keyin 4-bosqich
+   TO'G'RI: "...4-bosqichida..." ← JORIY=3, "oldinga" = 4
 
-Tarix: [..., bot: "3-bosqichda shunday qilinadi...", foydalanuvchi: "Orqaga → (1-bosqich)"]
-TO'G'RI: "[JARAYON_KODI] jarayonining 2-bosqichida nima qilingan edi?"
-Izoh: Bot oxirida "3-bosqich" dedi → JORIY=3. Qavsdagi "1" e'tiborsiz qoldiriladi. YANGI=3-1=2.
+4. Tarix:
+   Foydalanuvchi: "A1.2.6.15 jarayoni"
+   Bot: "... jami 8 ta bosqich ..."
+   Foydalanuvchi: "oldinga"
+   Bot: "1-bosqich... [batafsil]"
+   Foydalanuvchi: "oldinga"
+   Bot: "2-bosqich... [batafsil]"
+   Foydalanuvchi: "5-bosqich nima?"
+   Bot: "5-bosqich... [batafsil]"
+   Foydalanuvchi: "oldinga"
+   TO'G'RI: "...6-bosqichida..." ← JORIY=5 (5-bosqich so'ralgan), "oldinga" = 6
 
-MISOLLAR:
+5. Tarix:
+   Foydalanuvchi: "A1.2.6.15 jarayoni"
+   Bot: "... jami 8 ta bosqich ..."
+   Foydalanuvchi: "oldinga"
+   Bot: "1-bosqich... [batafsil]"
+   Foydalanuvchi: "oldinga → (1-bosqich)"
+   TO'G'RI: "...2-bosqichida..." ← Qavs ichidagi "1" e'tiborsiz, JORIY=1, YANGI=2
 
-Tarix: [A1.2.2.2 Depozit mablag'ini muddatidan oldin qaytarish va hisobvaraqni yopish muhokamasi, foydalanuvchi: "5-bosqichni yakunladim"]
+6. Tarix:
+   Foydalanuvchi: "A1.2.6.15 jarayoni"
+   Bot: "... jami 8 ta bosqich ..."
+   Foydalanuvchi: "oldinga"
+   Bot: "1-bosqich... [batafsil]"
+   Foydalanuvchi: "Orqaga → (3-bosqich)"
+   TO'G'RI: "1-bosqichdan orqaga o'tib bo'lmaydi" yoki "...1-bosqichida nima qilingan edi?" ← Qavsdagi "3" e'tiborsiz, JORIY=1, YANGI=1-1=0 → 1
+
+**TO'G'RI MISOLLAR:**
+
+Tarix: [Foydalanuvchi jarayon nomini yubordi (yon paneldan tanladi), Bot: "... jarayoni ... departamentiga tegishli bo'lib, bu jarayonda jami 8 ta bosqich mavjud va umumiy vaqt 30 daqiqa.", foydalanuvchi: "oldinga"]
+TO'G'RI: "[JARAYON_KODI] [JARAYON_NOMI] jarayonining 1-bosqichida qanday ishlar bajariladi?"
+
+Tarix: [Foydalanuvchi jarayon nomini yubordi, Bot: umumiy ma'lumot, foydalanuvchi: "1-bosqich nima?", Bot: "1-bosqichda...", foydalanuvchi: "oldinga"]
+TO'G'RI: "[JARAYON_KODI] [JARAYON_NOMI] jarayonining 2-bosqichida qanday ishlar bajariladi?"
+
+Tarix: [A1.2.2.2 muhokamasi, foydalanuvchi: "5-bosqichni yakunladim"]
 Savol: "oldinga"
 TO'G'RI: "A1.2.2.2 Depozit mablag'ini muddatidan oldin qaytarish va hisobvaraqni yopish jarayonining 6-bosqichida qanday ishlar bajariladi?"
-IZOH: Tarixda "5-bosqich yakunlandi" deyilgan — demak joriy bosqich 5. "oldinga" = 5+1 = 6. HECH QACHON 1 emas.
 
 Tarix: [A1.2.2.2 muhokamasi, joriy bosqich: 3-bosqich]
 Savol: "oldinga"
@@ -180,7 +297,6 @@ TO'G'RI: "A1.2.2.2 Depozit mablag'ini muddatidan oldin qaytarish va hisobvaraqni
 Tarix: [A1.1.1.1 "Visa, Humo, Uzcard bank kartalarini ochish" muhokama qilinmoqda]
 Savol: "jarayon egasi?"
 TO'G'RI: "A1.1.1.1 "Visa", "Humo", "Uzcard", "Kobeydj" bank kartalarini ochish jarayonining egasi qaysi departament?"
-NOTO'G'RI: "Servis menejer (Operatsion bo'limi) Chakana biznes departamentiga tegishli." ← XATO, bu javob emas savol kerak
 
 Tarix: [A1.1.1.1 "Visa", "Humo", "Uzcard", "Kobeydj" bank kartalarini ochish muhokama, 3-bosqich haqida gaplashildi]
 Savol: "ijrochi kim?"
@@ -225,6 +341,33 @@ TO'G'RI: "rahmat"
 Tarix: [A1.1.1.1 muhokama, 2-bosqich bajarildi dedi]
 Savol: "bajarildi"
 TO'G'RI: "A1.1.1.1 "Visa", "Humo", "Uzcard", "Kobeydj" bank kartalarini ochish jarayonining 2-bosqichi bajarildi. Keyingi qadam nima?"
+
+**QO'SHIMCHA MUHIM HOLAT (QADAM 0.1 GA QO'SHIMCHA):**
+Agar foydalanuvchi "oldinga" tugmasini bossa va suhbatda hech qanday ANIQ BOSQICH RAQAMI muhokama qilinmagan bo'lsa, lekin BOT umumiy statistika sifatida "jami N ta bosqich" deb aytgan bo'lsa:
+- "Jami N ta bosqich" → bu umumiy statistika, bosqich raqami EMAS
+- "oldinga" → 1-bosqich
+
+**YANA BIR MUHIM HOLAT:**
+Agar foydalanuvchi suhbatda "1-bosqich", "2-bosqich", ..., "8-bosqich" dan birini so'ragan bo'lsa va keyin "oldinga" desa:
+- So'nggi so'ralgan bosqich raqami JORIY BOSQICH hisoblanadi
+- "oldinga" = JORIY + 1
+
+**MISOL:**
+Tarix:
+  Foydalanuvchi: "A1.2.6.15 jarayoni"
+  Bot: "... jami 8 ta bosqich ..."
+  Foydalanuvchi: "5-bosqich nima?"
+  Bot: "5-bosqichda ... [batafsil]"
+  Foydalanuvchi: "oldinga"
+TO'G'RI: "...6-bosqichida qanday ishlar bajariladi?"
+
+**MISOLLAR (GATEWAY HOLATI):**
+Tarix: Foydalanuvchi: "8-BOSQICH YAKUNLANDI"
+Bot: "Keyingi qadam 9-bosqichga o'tishdir. 9-bosqichda... mijoz hisobraqami mavjudligini tekshiradi."
+Foydalanuvchi: "hisobraqam mavjud emas"
+Bot: "Bunday holatda hisobvaraq ochiladi. Keyingi qadam 10-bosqichga o'tadi — Servis menejer..."
+Foydalanuvchi: "oldinga"
+TO'G'RI: "A1.1.10.2 Pul mablag'larini xalqaro pul o'tkazmalari tizimi orqali jo'natish jarayonining 11-bosqichida qanday ishlar bajariladi?" ← Bot gateway natijasi sifatida 10-bosqichni bergan (JORIY=10), "oldinga" = 10+1=11
 
 Mana suhbat tarixi va yangi savol:
 """

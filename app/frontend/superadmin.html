@@ -290,6 +290,18 @@
                             <div class="p-4 bg-gray-50/50 border-b border-gray-100">
                                 <h3 class="font-bold text-gray-900 text-xs">Indekslangan hujjatlar segmenti</h3>
                             </div>
+
+                            <!-- YANGI: qidiruv qatori -->
+                            <div class="p-3 border-b border-gray-100 flex gap-2">
+                                <input type="text" id="qdrant-search" oninput="filterQdrantTable()"
+                                    class="flex-1 min-w-32 px-3 py-1.5 border text-xs rounded-lg focus:outline-none focus:border-red-500"
+                                    placeholder="Hujjat nomi bo'yicha qidirish...">
+                                <button onclick="clearQdrantFilter()"
+                                    class="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 border rounded-lg text-xs font-semibold text-gray-600 transition">
+                                    Tozalash
+                                </button>
+                            </div>
+
                             <div class="overflow-auto max-h-[550px] w-full">
                                 <table class="w-full text-left border-collapse min-w-[850px]">
                                     <thead>
@@ -1168,71 +1180,81 @@
         // =======================================
         async function loadQdrantData() {
             try {
-                // To'g'rilandi: ' belgisi o'rniga backtick qo'yildi
                 const r = await fetch(`${API_URL}/superadmin/qdrant/list`, { credentials: 'include' });
                 const result = await r.json();
                 if (!r.ok) return;
-        
+
                 qdrantFullData = result.data || [];
-                const tbody = document.getElementById('qdrant-table-body');
-                if (!tbody) return;
-                tbody.innerHTML = '';
-        
-                if (!qdrantFullData.length) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 italic">Bazaga hali hech narsa qo\'shilmagan</td></tr>';
-                    return;
-                }
-        
-                qdrantFullData.forEach(item => {
-                    const tr = document.createElement('tr');
-                    tr.className = "border-b border-slate-100 hover:bg-slate-50/80 transition text-slate-700";
-
-                    // Manba qiymatini tekshirish
-                    const manbaDisplay = String(item.url).startsWith('http')
-                        ? `<a href="${item.url}" target="_blank" class="text-indigo-600 hover:underline font-medium">${item.url.substring(0,20)}…</a>`
-                        : `<span class="text-slate-400 font-medium">Hujjat/Fayl</span>`;
-
-                    // Holat uchun ranglar
-                    const statusClass = item.holat === 'Yangi' 
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                        : (item.holat && (item.holat.includes('O\'zgargan') || item.holat === 'O\'zgargan'))
-                            ? 'bg-amber-50 text-amber-700 border-amber-200' 
-                            : 'bg-slate-50 text-slate-600 border-slate-200';
-
-                    const adminName = item.admin || item.added_by || item.superadmin || 'Noma\'lum';
-
-                    tr.innerHTML = `
-                        <td class="p-3 truncate font-medium text-slate-500">${manbaDisplay}</td>
-                        
-                        <td class="p-3 font-semibold text-slate-800 break-words max-w-[200px]" title="${item.title || ''}">
-                            ${item.title || 'Sarlavhasiz'}
-                        </td>
-                        
-                        <td class="p-3 text-slate-500 truncate cursor-pointer hover:text-indigo-600 hover:underline max-w-[250px]" 
-                            onclick="showModal('${item.id}')" 
-                            title="To'liq ko'rish uchun bosing">
-                            ${item.matn_parchasi || ''}
-                        </td>
-                        
-                        <td class="p-3 text-center whitespace-nowrap">
-                            <span class="px-2 py-0.5 rounded-md border text-[10px] font-bold ${statusClass}">
-                                ${item.holat || 'Yangi'}
-                            </span>
-                            <div class="text-[10px] text-slate-400 mt-1">👤 ${adminName}</div>
-                        </td>
-                        
-                        <td class="p-3 text-center whitespace-nowrap">
-                            <button onclick="deleteQdrantItem('${item.id}')" 
-                                    class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-[11px] font-bold rounded-md transition cursor-pointer">
-                                🗑 O'chirish
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            } catch (e) { 
-                console.error("Jadvalni yuklashda xatolik:", e); 
+                renderQdrantTable(qdrantFullData);
+            } catch (e) {
+                console.error("Jadvalni yuklashda xatolik:", e);
             }
+        }
+
+        function renderQdrantTable(list) {
+            const tbody = document.getElementById('qdrant-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (!list.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400 italic">Hujjat topilmadi</td></tr>';
+                return;
+            }
+
+            list.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-100 hover:bg-slate-50/80 transition text-slate-700";
+
+                const manbaDisplay = String(item.url).startsWith('http')
+                    ? `<a href="${item.url}" target="_blank" class="text-indigo-600 hover:underline font-medium">${item.url.substring(0,20)}…</a>`
+                    : `<span class="text-slate-400 font-medium">Hujjat/Fayl</span>`;
+
+                const statusClass = item.holat === 'Yangi'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : (item.holat && (item.holat.includes('O\'zgargan') || item.holat === 'O\'zgargan'))
+                        ? 'bg-amber-50 text-amber-700 border-amber-200'
+                        : 'bg-slate-50 text-slate-600 border-slate-200';
+
+                const adminName = item.admin || item.added_by || item.superadmin || 'Noma\'lum';
+
+                tr.innerHTML = `
+                    <td class="p-3 truncate font-medium text-slate-500">${manbaDisplay}</td>
+                    <td class="p-3 font-semibold text-slate-800 break-words max-w-[200px]" title="${item.title || ''}">
+                        ${item.title || 'Sarlavhasiz'}
+                    </td>
+                    <td class="p-3 text-slate-500 truncate cursor-pointer hover:text-indigo-600 hover:underline max-w-[250px]"
+                        onclick="showModal('${item.id}')"
+                        title="To'liq ko'rish uchun bosing">
+                        ${item.matn_parchasi || ''}
+                    </td>
+                    <td class="p-3 text-center whitespace-nowrap">
+                        <span class="px-2 py-0.5 rounded-md border text-[10px] font-bold ${statusClass}">
+                            ${item.holat || 'Yangi'}
+                        </span>
+                        <div class="text-[10px] text-slate-400 mt-1">👤 ${adminName}</div>
+                    </td>
+                    <td class="p-3 text-center whitespace-nowrap">
+                        <button onclick="deleteQdrantItem('${item.id}')"
+                                class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-[11px] font-bold rounded-md transition cursor-pointer">
+                            🗑 O'chirish
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterQdrantTable() {
+            const q = document.getElementById('qdrant-search').value.toLowerCase().trim();
+            const filtered = q
+                ? qdrantFullData.filter(item => (item.title || '').toLowerCase().includes(q))
+                : qdrantFullData;
+            renderQdrantTable(filtered);
+        }
+
+        function clearQdrantFilter() {
+            document.getElementById('qdrant-search').value = '';
+            renderQdrantTable(qdrantFullData);
         }
 
         function showModal(id) {
