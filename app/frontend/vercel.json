@@ -11,11 +11,11 @@
     },
     {
       "source": "/api/chat",
-      "destination": "https://authority-shareware-negotiations-sheriff.trycloudflare.com/chat/"
+      "destination": "https://editor-release-consistent-serial.trycloudflare.com/chat/"
     },
     {
       "source": "/api/:path*",
-      "destination": "https://authority-shareware-negotiations-sheriff.trycloudflare.com/:path*"
+      "destination": "https://editor-release-consistent-serial.trycloudflare.com/:path*"
     }
   ]
 }
